@@ -1,0 +1,561 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * The tokens, motion and utilities below are shared with the staff console
+ * (pc-ui/app/globals.css). The portal and the console are one product, so a
+ * token changed there should change here too. Only the console's sidebar
+ * tokens are left out, because the portal has no sidebar.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* ---------------------------------------------------------------------
+     Clinical status scale
+
+     Four meanings, each as a text colour and a tinted ground for it to sit
+     on: `bg-stable-soft text-stable`. Kept apart from `--primary` so a badge
+     can say urgent without borrowing the brand, and named rather than drawn
+     from Tailwind's numeric palettes so the meaning travels with the token
+     instead of with a hue somebody picked at the call site.
+     --------------------------------------------------------------------- */
+  --color-stable: var(--stable);
+  --color-stable-soft: var(--stable-soft);
+  --color-caution: var(--caution);
+  --color-caution-soft: var(--caution-soft);
+  --color-urgent: var(--urgent);
+  --color-urgent-soft: var(--urgent-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  /* The maternity half of the identity: the teal is the clinic, the blush
+     is who the clinic is for. Accent and decoration only. */
+  --color-blush: var(--blush);
+  --color-blush-soft: var(--blush-soft);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ---------------------------------------------------------------------
+     Motion
+
+     Every animation here is caught by the `prefers-reduced-motion` block at
+     the foot of this file, so none of them needs to guard itself.
+     --------------------------------------------------------------------- */
+  /* A heartbeat, not a throb: a strong first thump, a weaker second, then a
+     long rest. The rest is what keeps it from reading as a nag. */
+  --animate-heartbeat: hc-heartbeat 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* Content settling into place. `both` so an element stays invisible until
+     its turn, which is what makes a staggered grid read as one grid
+     arriving rather than four things flickering independently. */
+  --animate-rise: hc-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: hc-fade 0.4s ease-out both;
+  /* Decorative gradients, on a cycle slow enough to be felt not watched. */
+  --animate-breathe: hc-breathe 9s ease-in-out infinite;
+  --animate-shimmer: hc-shimmer 1.6s ease-in-out infinite;
+  /* A track filling to its value. Scales rather than animating `width` so it
+     runs on the compositor; the element must carry `origin-left`. */
+  --animate-fill: hc-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+:root {
+  /* Grounds: a clinical off-white with the coolness left in rather than
+     neutralised out, and pure white for the cards on top of it, so the
+     layering reads without a border having to do all the work. */
+  --background: oklch(0.985 0.006 210);
+  --foreground: oklch(0.215 0.028 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.215 0.028 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.215 0.028 240);
+
+  /* Medical teal. Lightness sits at 0.47 rather than the mid-50s a teal
+     naturally wants, because white label text has to clear 4.5:1 against
+     it; at 0.52 it lands nearer 4.1 and every filled button fails contrast. */
+  --primary: oklch(0.47 0.093 196);
+  --primary-foreground: oklch(0.99 0.004 196);
+
+  --secondary: oklch(0.958 0.014 205);
+  --secondary-foreground: oklch(0.3 0.04 215);
+  --muted: oklch(0.965 0.011 208);
+  /* 4.6:1 on white. It carries every hint, timestamp and caption, so it has
+     to clear AA on its own. */
+  --muted-foreground: oklch(0.49 0.021 228);
+  /* Hover and selected grounds. Tinted toward the teal so a hovered row
+     reads as part of the system rather than as a grey smudge. */
+  --accent: oklch(0.955 0.022 196);
+  --accent-foreground: oklch(0.3 0.05 205);
+
+  --destructive: oklch(0.495 0.196 27);
+
+  --border: oklch(0.918 0.012 215);
+  --input: oklch(0.918 0.012 215);
+  --ring: oklch(0.6 0.095 196);
+
+  --stable: oklch(0.475 0.108 162);
+  --stable-soft: oklch(0.955 0.032 162);
+  --caution: oklch(0.49 0.113 70);
+  --caution-soft: oklch(0.962 0.04 80);
+  --urgent: oklch(0.495 0.196 27);
+  --urgent-soft: oklch(0.958 0.028 27);
+  --info: oklch(0.49 0.135 248);
+  --info-soft: oklch(0.955 0.028 248);
+
+  --blush: oklch(0.5 0.157 355);
+  --blush-soft: oklch(0.955 0.03 355);
+
+  /* Teal through to blush, so five series still read as this product
+     rather than as whatever palette the chart library shipped with. */
+  --chart-1: oklch(0.55 0.1 196);
+  --chart-2: oklch(0.6 0.12 172);
+  --chart-3: oklch(0.55 0.13 248);
+  --chart-4: oklch(0.62 0.14 350);
+  --chart-5: oklch(0.68 0.13 75);
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  /* Deep blue-slate rather than black, with every accent lifted in
+     lightness to survive on it. */
+  --background: oklch(0.185 0.022 240);
+  --foreground: oklch(0.955 0.008 210);
+  --card: oklch(0.235 0.024 238);
+  --card-foreground: oklch(0.955 0.008 210);
+  --popover: oklch(0.235 0.024 238);
+  --popover-foreground: oklch(0.955 0.008 210);
+
+  --primary: oklch(0.72 0.11 192);
+  --primary-foreground: oklch(0.2 0.035 220);
+
+  --secondary: oklch(0.295 0.028 235);
+  --secondary-foreground: oklch(0.95 0.01 210);
+  --muted: oklch(0.295 0.028 235);
+  --muted-foreground: oklch(0.735 0.022 215);
+  --accent: oklch(0.33 0.042 210);
+  --accent-foreground: oklch(0.96 0.01 200);
+
+  --destructive: oklch(0.71 0.17 24);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.66 0.1 196);
+
+  --stable: oklch(0.75 0.14 162);
+  --stable-soft: oklch(0.75 0.14 162 / 16%);
+  --caution: oklch(0.8 0.14 80);
+  --caution-soft: oklch(0.8 0.14 80 / 16%);
+  --urgent: oklch(0.71 0.17 24);
+  --urgent-soft: oklch(0.71 0.17 24 / 16%);
+  --info: oklch(0.72 0.13 248);
+  --info-soft: oklch(0.72 0.13 248 / 16%);
+
+  --blush: oklch(0.74 0.14 352);
+  --blush-soft: oklch(0.74 0.14 352 / 16%);
+
+  --chart-1: oklch(0.72 0.11 192);
+  --chart-2: oklch(0.75 0.13 172);
+  --chart-3: oklch(0.7 0.13 248);
+  --chart-4: oklch(0.74 0.14 350);
+  --chart-5: oklch(0.79 0.13 75);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Keyframes
+   ------------------------------------------------------------------------ */
+
+/**
+ * Systole, the smaller second sound, then diastole. The two peaks sit close
+ * together and the remaining two thirds of the cycle is rest; that ratio is
+ * the whole reason it reads as a pulse rather than as a blink.
+ */
+@keyframes hc-heartbeat {
+  0%,
+  30%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.13);
+  }
+  18% {
+    transform: scale(1.01);
+  }
+  25% {
+    transform: scale(1.07);
+  }
+}
+
+/**
+ * The ECG sweep.
+ *
+ * <p>Both dash lengths are 100 because the traced path carries
+ * `pathLength="100"`, which renormalises its geometry to 100 units, the only
+ * way to dash-animate a path to its exact length without measuring it in
+ * JavaScript first. Running the offset from +100 to -100 draws the trace in
+ * and then pulls it out of the far side, so the loop has no visible seam.
+ */
+@keyframes hc-ecg {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes hc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hc-breathe {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.32;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes hc-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hc-shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme utilities
+   ------------------------------------------------------------------------ */
+
+/**
+ * The trace itself. Pair it with `pathLength="100"` on the `<path>`, or the
+ * dash lengths in `hc-ecg` will not match the geometry and the sweep will
+ * stutter. `--ecg-duration` lets the caller set the rate: a login page wants
+ * an unhurried resting one, a loading overlay wants to look busy.
+ */
+@utility ecg-trace {
+  stroke-dasharray: 100 100;
+  animation: hc-ecg var(--ecg-duration, 2.6s) linear infinite;
+}
+
+/**
+ * ECG graph paper: the coarse-over-fine grid a rhythm strip is printed on,
+ * at an opacity where it registers as texture rather than as a grid anyone
+ * is meant to read values off.
+ */
+@utility ecg-paper {
+  background-image:
+    linear-gradient(to right, var(--blush-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--blush-soft) 1px, transparent 1px),
+    linear-gradient(
+      to right,
+      color-mix(in oklch, var(--blush-soft), transparent 55%) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--blush-soft), transparent 55%) 1px,
+      transparent 1px
+    );
+  background-size:
+    5rem 5rem,
+    5rem 5rem,
+    1rem 1rem,
+    1rem 1rem;
+}
+
+/**
+ * Staggers whatever sits directly inside it into view, 60ms apart.
+ *
+ * <p>Capped at eight: past that the last tile waits half a second for no
+ * gain, so everything from the eighth on shares the eighth's delay and
+ * arrives together.
+ */
+@utility stagger {
+  & > * {
+    animation: var(--animate-rise);
+  }
+  & > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  & > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  & > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  & > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  & > *:nth-child(5) {
+    animation-delay: 240ms;
+  }
+  & > *:nth-child(6) {
+    animation-delay: 300ms;
+  }
+  & > *:nth-child(7) {
+    animation-delay: 360ms;
+  }
+  & > *:nth-child(n + 8) {
+    animation-delay: 420ms;
+  }
+}
+
+/**
+ * The lift a card takes on hover. One pixel, not the four a marketing page
+ * would use: cards sit shoulder to shoulder in a grid, and more than that
+ * makes the neighbours look misaligned rather than making this one look
+ * raised.
+ */
+@utility lift {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--primary), transparent 78%);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/** The sweep that replaces a flat pulse on loading placeholders. */
+@utility shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--card), transparent 35%) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: var(--animate-shimmer);
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile / responsive foundations
+   ------------------------------------------------------------------------ */
+
+/**
+ * Hides the scrollbar on strips that are meant to be swiped rather than
+ * scrolled with a bar. The overflow still works; only the chrome goes away.
+ */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/**
+ * The body of a piece of guidance: server-sanitised HTML authored by staff in
+ * the console's rich-text editor.
+ *
+ * <p>Defined once here rather than as a string of arbitrary variants repeated
+ * at each call site. Set larger and looser than the console's equivalent on
+ * purpose — the console shows this in a dense admin dialog, while here it is
+ * the thing a mother actually came to read, often on a phone.
+ */
+@utility rich-text {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+
+  & p {
+    margin-block-end: 0.875rem;
+  }
+  & p:last-child {
+    margin-block-end: 0;
+  }
+
+  & ul,
+  & ol {
+    margin-block-end: 0.875rem;
+    padding-inline-start: 1.35rem;
+  }
+  & ul {
+    list-style: disc;
+  }
+  & ol {
+    list-style: decimal;
+  }
+  & li {
+    margin-block-end: 0.375rem;
+  }
+
+  & h1,
+  & h2,
+  & h3,
+  & h4 {
+    margin-block: 1.25rem 0.5rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--foreground);
+  }
+  & h1 {
+    font-size: 1.125rem;
+  }
+  & h2 {
+    font-size: 1.0625rem;
+  }
+  & h3,
+  & h4 {
+    font-size: 1rem;
+  }
+  & :is(h1, h2, h3, h4):first-child {
+    margin-block-start: 0;
+  }
+
+  & strong,
+  & b {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  & a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  & blockquote {
+    margin-block-end: 0.875rem;
+    border-inline-start: 3px solid color-mix(in oklch, var(--primary), transparent 60%);
+    padding-inline-start: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  /* Staff paste these in occasionally; without this they set the page's
+     minimum width and the whole phone layout scrolls sideways. */
+  & img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+}
+
+/** Keeps content clear of the notch and the home indicator on iOS. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@layer base {
+  html {
+    /* Stops iOS Safari inflating text when the phone turns landscape. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply antialiased;
+    /* Removes the grey flash Android draws over every tap. */
+    -webkit-tap-highlight-color: transparent;
+    /*
+     * Long unbroken strings (an email, a patient ID, a URL) are the usual
+     * cause of a page that scrolls sideways on a phone. Wrapping them is
+     * cheaper than auditing every element that might hold one.
+     */
+    overflow-wrap: break-word;
+  }
+
+  /*
+   * Respects the OS setting rather than animating regardless. This block is
+   * what licences the rest of the file to animate freely: the entrances,
+   * the ECG traces and the heartbeat all collapse to their end state here,
+   * and `hc-rise` ending at full opacity is what keeps staggered content
+   * visible rather than stranded on the opening frame of its `both` fill.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
