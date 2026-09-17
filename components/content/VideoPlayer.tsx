@@ -3,6 +3,7 @@ import { ClockIcon, VideoOffIcon } from "lucide-react"
 import type { ContentVideo } from "@/interface"
 import { mediaUrl } from "@/lib/api/config"
 import { formatDuration } from "@/lib/format"
+import { strings } from "@/lib/strings"
 
 /**
  * One clip.
@@ -18,6 +19,7 @@ import { formatDuration } from "@/lib/format"
  * frame.
  */
 export function VideoPlayer({ video }: { video: ContentVideo }) {
+  const copy = strings.video
   const source = mediaUrl(video.playbackUrl)
   const hls = mediaUrl(video.hlsUrl)
   const embed = mediaUrl(video.embedUrl)
@@ -31,10 +33,8 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
       <Frame>
         <div className="flex flex-col items-center gap-2 px-4 text-center">
           <ClockIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">Still being prepared</p>
-          <p className="text-xs text-muted-foreground">
-            This video is nearly ready. Please check back shortly.
-          </p>
+          <p className="text-sm font-medium text-foreground">{copy.preparing}</p>
+          <p className="text-xs text-muted-foreground">{copy.nearlyReady}</p>
         </div>
       </Frame>
     )
@@ -45,7 +45,7 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
       <Frame>
         <iframe
           src={embed}
-          title={video.title ?? "Video"}
+          title={video.title ?? copy.fallbackTitle}
           allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
           loading="lazy"
@@ -60,7 +60,7 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
       <Frame>
         <div className="flex flex-col items-center gap-2 px-4 text-center">
           <VideoOffIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">This video is unavailable.</p>
+          <p className="text-sm text-muted-foreground">{copy.unavailable}</p>
         </div>
       </Frame>
     )
@@ -84,7 +84,7 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
           */}
           <source src={source} />
           {hls && <source src={hls} type="application/vnd.apple.mpegurl" />}
-          Your browser cannot play this video.
+          {copy.cannotPlay}
         </video>
       </Frame>
 

@@ -3,13 +3,11 @@
 import Link from "next/link"
 import { HeartPulse } from "lucide-react"
 
-import { AccountMenu } from "@/components/global/AccountMenu"
+import { AccountMenu, type AccountLabels } from "@/components/global/AccountMenu"
 import { AppNavLinks, type NavLabels } from "@/components/global/AppNav"
-import { LanguageSwitcher } from "@/components/global/LanguageSwitcher"
 import { Badge } from "@/components/ui/badge"
 import type { Patient } from "@/interface"
 import { HOME_PATH } from "@/lib/auth/cookies"
-import type { Language } from "@/lib/i18n"
 
 /**
  * The bar across the top of every signed-in page.
@@ -23,13 +21,13 @@ import type { Language } from "@/lib/i18n"
  */
 export function AppHeader({
   patient,
-  language,
   navLabels,
+  accountLabels,
   weekLabel,
 }: {
   patient: Patient
-  language: Language
   navLabels: NavLabels
+  accountLabels: AccountLabels
   /** "Week 24", already worded and numbered by the shell. */
   weekLabel: string
 }) {
@@ -54,8 +52,6 @@ export function AppHeader({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
-        <LanguageSwitcher current={language} />
-
         {/*
           The figure a patient orients everything else by. `secondary` rather
           than one of the clinical variants: those mean states, and a week is
@@ -69,7 +65,7 @@ export function AppHeader({
         <Badge variant="secondary" className="tabular-nums">
           {weekLabel}
         </Badge>
-        <AccountMenu patient={patient} />
+        <AccountMenu patient={patient} labels={accountLabels} />
       </div>
     </header>
   )

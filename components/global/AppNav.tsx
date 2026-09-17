@@ -19,9 +19,9 @@ const DESTINATIONS = [
 ] as const
 
 /**
- * The three words, in the language of the request.
+ * The three words.
  *
- * <p>Passed in from the server rather than read from `lib/i18n` here: these are
+ * <p>Passed in from the server rather than read from `lib/strings` here: these are
  * client components, and importing the dictionary would send every string in
  * the app to the browser to label three tabs.
  */

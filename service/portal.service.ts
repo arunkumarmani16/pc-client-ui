@@ -3,13 +3,14 @@ import type { AxiosRequestConfig } from "axios"
 import { httpClient } from "./http-client"
 
 import type { Content, Feed, FeedQuery, MonthFeed, Patient } from "@/interface"
-import type { Language } from "@/lib/i18n"
 import {
   MAX_MONTH,
   MIN_MONTH,
   clampMonth,
   endWeekOf,
+  isMonthOpen,
   monthOf,
+  openMonthsAround,
   startWeekOf,
   trimesterLabelOf,
   weeksLabelOf,
@@ -47,7 +48,6 @@ export async function getFeed(
       ...(query.week !== undefined ? { week: query.week } : {}),
       ...(query.type ? { type: query.type } : {}),
       ...(query.category ? { category: query.category } : {}),
-      ...(query.lang ? { lang: query.lang } : {}),
     },
   })
   return data
@@ -71,7 +71,6 @@ export async function getFeed(
  */
 export async function getMonthFeed(
   month?: number,
-  lang?: Language,
   config?: AxiosRequestConfig
 ): Promise<MonthFeed> {
   // The first request doubles as the lookup for which month she is in: asked
@@ -79,42 +78,49 @@ export async function getMonthFeed(
   // the remaining weeks are read from. Resolving the month any other way would
   // cost a round trip that this one already pays for.
   const opening = await getFeed(
-    month === undefined ? { lang } : { week: startWeekOf(month), lang },
+    month === undefined ? {} : { week: startWeekOf(month) },
     config
   )
 
-  const resolved = month === undefined ? monthOf(opening.thisWeek) : clampMonth(month)
+  const thisMonth = monthOf(opening.thisWeek)
+  const requested = month === undefined ? thisMonth : clampMonth(month)
+  // Only her own month and the one either side of it can be read. A locked
+  // month asked for by URL lands on her own month instead of being served.
+  const resolved = isMonthOpen(requested, thisMonth) ? requested : thisMonth
+
+  // The opening week is only reused when it belongs to the month being served:
+  // after a locked month is turned away it holds that month's pieces, not these.
+  const weeks = weeksOf(resolved)
+  const reuseOpening = weeks.includes(opening.week)
   const rest = await Promise.all(
-    weeksOf(resolved)
-      .filter((week) => week !== opening.week)
-      .map((week) => getFeed({ week, lang }, config))
+    weeks
+      .filter((week) => !reuseOpening || week !== opening.week)
+      .map((week) => getFeed({ week }, config))
   )
 
   const itemsById = new Map<string, Content>()
-  for (const feed of [opening, ...rest]) {
+  for (const feed of reuseOpening ? [opening, ...rest] : rest) {
     for (const item of feed.items) {
       if (!itemsById.has(item.contentId)) itemsById.set(item.contentId, item)
     }
   }
 
-  const thisMonth = monthOf(opening.thisWeek)
+  const { first: firstOpenMonth, last: lastOpenMonth } = openMonthsAround(thisMonth)
   const items = [...itemsById.values()].sort((left, right) => left.startWeek - right.startWeek)
 
   return {
     month: resolved,
     startWeek: startWeekOf(resolved),
     endWeek: endWeekOf(resolved),
-    weeksLabel: weeksLabelOf(resolved, lang),
-    trimesterLabel: trimesterLabelOf(resolved, lang),
+    weeksLabel: weeksLabelOf(resolved),
+    trimesterLabel: trimesterLabelOf(resolved),
     currentMonth: resolved === thisMonth,
     thisMonth,
     thisWeek: opening.thisWeek,
     minMonth: MIN_MONTH,
     maxMonth: MAX_MONTH,
-    language: opening.language,
-    // Whether anything in the month came back in a different language to the
-    // one asked for — which is how an untranslated piece announces itself.
-    partiallyTranslated: items.some((item) => item.language !== opening.language),
+    firstOpenMonth,
+    lastOpenMonth,
     // Earliest week first, so a month that mixes whole-month material with a
     // piece written for its last fortnight still reads in order. The sort is
     // stable, so the API's own ordering within a week survives it.
@@ -125,12 +131,11 @@ export async function getMonthFeed(
 /** One piece of guidance. A draft answers 404, the same as a missing one. */
 export async function getContent(
   contentId: string,
-  lang?: Language,
   config?: AxiosRequestConfig
 ): Promise<Content> {
   const { data } = await httpClient.get<Content>(
     `${RESOURCE}/content/${encodeURIComponent(contentId)}`,
-    { ...config, params: { ...(lang ? { lang } : {}) } }
+    config
   )
   return data
 }

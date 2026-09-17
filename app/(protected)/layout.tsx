@@ -1,8 +1,7 @@
 import { AppHeader } from "@/components/global/AppHeader"
 import { AppTabBar } from "@/components/global/AppNav"
 import { requireSession } from "@/lib/auth/session"
-import { copyFor } from "@/lib/i18n"
-import { currentLanguage } from "@/lib/language"
+import { strings } from "@/lib/strings"
 
 /**
  * The shell around every signed-in page.
@@ -23,10 +22,7 @@ export default async function ProtectedLayout({
 }) {
   const { patient } = await requireSession()
 
-  // Resolved once for the shell and handed to both navigations, so the tab bar
-  // and the header cannot end up in different languages.
-  const language = await currentLanguage()
-  const copy = copyFor(language).nav
+  const copy = strings.nav
 
   // Picked apart into plain strings rather than passed as the `nav` object it
   // comes from. That object holds `weekBadge`, a function, and a function
@@ -39,11 +35,12 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background" lang={language}>
+    <div className="flex h-dvh flex-col bg-background">
       <AppHeader
         patient={patient}
-        language={language}
         navLabels={navLabels}
+        // All plain strings already, so this one can cross as it is.
+        accountLabels={strings.account}
         weekLabel={copy.weekBadge(patient.pregnancy.currentWeek)}
       />
       <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">

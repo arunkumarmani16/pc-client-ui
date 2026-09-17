@@ -1,16 +1,40 @@
 import {
   ActivityIcon,
   BabyIcon,
+  BookOpenIcon,
   DumbbellIcon,
   InfoIcon,
+  LightbulbIcon,
+  PlayIcon,
   SmileIcon,
+  SparklesIcon,
   StethoscopeIcon,
   TriangleAlertIcon,
   UtensilsIcon,
   type LucideIcon,
 } from "lucide-react"
 
-import type { ContentCategory } from "@/interface"
+import type { ContentCategory, ContentType } from "@/interface"
+
+/**
+ * An icon per kind of piece, drawn beside its `typeLabel` so "Video" or "Tip"
+ * can be recognised without reading the word.
+ */
+const TYPE_ICONS: Record<ContentType, LucideIcon> = {
+  VIDEO: PlayIcon,
+  ARTICLE: BookOpenIcon,
+  SUGGESTION: LightbulbIcon,
+  TIP: SparklesIcon,
+}
+
+/**
+ * How a kind of piece looks. Returned as `{ icon }`, the same shape as
+ * `categoryStyle`, so a page can pull the icon out and draw it directly.
+ * Falls back to the info icon for a type added to the API but not yet here.
+ */
+export function typeStyle(type: ContentType): { icon: LucideIcon } {
+  return { icon: TYPE_ICONS[type] ?? InfoIcon }
+}
 
 /**
  * How a category looks, in one place.

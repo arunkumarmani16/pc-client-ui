@@ -18,19 +18,6 @@
  */
 export const ACCESS_TOKEN_COOKIE = "patient_access_token"
 
-/**
- * The language the portal is read in.
- *
- * <p>Not httpOnly, unlike the token: there is nothing secret about a language,
- * and a preference the browser can read is one a client component could act on
- * later without a round trip. A year is deliberate — this is a setting a mother
- * changes once, if ever.
- */
-export const LANGUAGE_COOKIE = "portal_language"
-
-/** Where the language switcher posts to. */
-export const LANGUAGE_PATH = "/api/language"
-
 /** Where an unauthenticated visitor is sent. */
 export const LOGIN_PATH = "/login"
 
@@ -87,18 +74,3 @@ export function accessTokenCookie(token: string, expiresAt: string) {
   }
 }
 
-/**
- * A year, because a language is chosen once. Lax rather than strict so the
- * choice survives arriving from a link someone sent her.
- */
-export function languageCookie(language: string) {
-  return {
-    name: LANGUAGE_COOKIE,
-    value: language,
-    httpOnly: false,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-  }
-}

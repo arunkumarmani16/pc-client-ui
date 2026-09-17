@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
+import type { Metadata } from "next"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 import { ContentCard } from "@/components/content/ContentCard"
@@ -6,19 +8,21 @@ import {
   MonthCarousel,
   type CarouselMonth,
   type CarouselWeek,
+  type MonthStatus,
 } from "@/components/content/MonthCarousel"
 import { PageHeader } from "@/components/global/PageHeader"
 import type { Content, ContentCategory, MonthFeed } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle } from "@/lib/content"
-import { copyFor, type Language } from "@/lib/i18n"
-import { currentLanguage } from "@/lib/language"
-import { PREGNANCY_MONTHS, weeksOf } from "@/lib/pregnancy"
+import { PREGNANCY_MONTHS, clampMonth, isMonthOpen, weeksOf } from "@/lib/pregnancy"
 import { requireAuthConfig } from "@/lib/auth/session"
+import { strings } from "@/lib/strings"
 import { cn } from "@/lib/utils"
 import { getMonthFeed } from "@/service"
 
-export const metadata = { title: "Guidance" }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: strings.guidance.title }
+}
 
 type Search = {
   month?: string | string[]
@@ -35,8 +39,8 @@ type Search = {
  * neighbours. The month is read in one request set and then narrowed here — by
  * week, by topic, or by both — so neither of those filters costs a round trip.
  *
- * <p>Every month can be opened, not only the current one: reading ahead is the
- * thing mothers ask for first. The bounds come from the calendar in
+ * <p>Three months can be opened: the one she is in, the one before and the one
+ * after. The rest are shown locked. The window comes from `isMonthOpen` in
  * `lib/pregnancy.ts` rather than being written out here.
  */
 export default async function GuidancePage({
@@ -46,14 +50,21 @@ export default async function GuidancePage({
 }) {
   const params = await searchParams
   const category = categoryParam(params.category)
-  const language = await currentLanguage()
-  const copy = copyFor(language).guidance
+  const copy = strings.guidance
 
   // Fetched unfiltered even when something is chosen: a month holds a handful
   // of pieces, and one read gives the list, the weeks that have anything in
   // them, and the topics that do. Filtering server-side instead would cost a
   // round trip per chip and still offer chips leading to empty pages.
-  const feed = await getMonthFeed(monthParam(params.month), language, await requireAuthConfig())
+  const requested = monthParam(params.month)
+  const feed = await getMonthFeed(requested, await requireAuthConfig())
+
+  // `getMonthFeed` serves her own month in place of a locked one. The URL is put
+  // right as well, so the address bar never names a month the page is not showing.
+  if (requested !== undefined && clampMonth(requested) !== feed.month) {
+    redirect(hrefFor(undefined, undefined, category))
+  }
+
   const week = weekParam(params.week, feed.month)
 
   // Each filter is counted against the other one's result, so a week chip
@@ -73,7 +84,7 @@ export default async function GuidancePage({
       />
 
       <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
-        <MonthNav feed={feed} week={week} category={category} language={language} />
+        <MonthNav feed={feed} week={week} category={category} />
         <CategoryFilter
           all={inWeek}
           month={feed.month}
@@ -82,25 +93,14 @@ export default async function GuidancePage({
           allLabel={copy.allTopics}
         />
 
-        {/*
-          Said once for the month rather than badged on every card: a mother
-          reading in Tamil should know why some of this is in English, and
-          being told so five times is not knowing it five times better.
-        */}
-        {feed.partiallyTranslated && (
-          <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
-            {copyFor(language).content.notTranslated}
-          </p>
-        )}
-
         {items.length === 0 ? (
           <p className="rounded-xl border border-dashed bg-card px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
-            {emptyMessage(feed, week, category, language)}
+            {emptyMessage(feed, week, category)}
           </p>
         ) : (
           <div className="stagger grid gap-3 sm:grid-cols-2">
             {items.map((content) => (
-              <ContentCard key={content.contentId} content={content} language={language} />
+              <ContentCard key={content.contentId} content={content} />
             ))}
           </div>
         )}
@@ -122,16 +122,16 @@ function MonthNav({
   feed,
   week,
   category,
-  language,
 }: {
   feed: MonthFeed
   week?: number
   category?: ContentCategory
-  language: Language
 }) {
-  const previous = feed.month > feed.minMonth ? feed.month - 1 : null
-  const next = feed.month < feed.maxMonth ? feed.month + 1 : null
-  const copy = copyFor(language).guidance
+  // Bounded by the open months rather than the calendar, so an arrow never
+  // steps into a locked month.
+  const previous = feed.month > feed.firstOpenMonth ? feed.month - 1 : null
+  const next = feed.month < feed.lastOpenMonth ? feed.month + 1 : null
+  const copy = strings.guidance
 
   return (
     <nav aria-label={copy.pregnancyMonth} className="space-y-2 rounded-xl border bg-card p-2">
@@ -170,15 +170,16 @@ function MonthNav({
       </div>
 
       <MonthCarousel
-        months={monthCards(feed, category, language)}
-        weeks={weekChips(feed, week, category, language)}
+        months={monthCards(feed, category)}
+        weeks={weekChips(feed, week, category)}
       />
     </nav>
   )
 }
 
 /**
- * The ten month cards.
+ * The ten month cards: hers, the one before and the one after open, each in
+ * its own colour, and the rest locked.
  *
  * <p>A month always opens whole: the week is dropped from the link because
  * week 18 means nothing once month 7 is the one being read, and carrying it
@@ -186,13 +187,20 @@ function MonthNav({
  */
 function monthCards(
   feed: MonthFeed,
-  category: ContentCategory | undefined,
-  language: Language
+  category: ContentCategory | undefined
 ): CarouselMonth[] {
-  const copy = copyFor(language).guidance
+  const copy = strings.guidance
+  const suffix: Record<MonthStatus, string> = {
+    finished: copy.lockedSuffix,
+    previous: ` — ${copy.previousMonth}`,
+    current: copy.hereSuffix,
+    next: ` — ${copy.nextMonth}`,
+    locked: copy.lockedSuffix,
+  }
 
   return PREGNANCY_MONTHS.map((entry) => {
     const weeksLabel = `${entry.startWeek}–${entry.endWeek}`
+    const status = statusOf(entry.month, feed.thisMonth)
 
     return {
       month: entry.month,
@@ -201,14 +209,22 @@ function monthCards(
       // Built here rather than in the carousel: the strip is a client
       // component, and shipping it a dictionary to assemble one sentence from
       // would send every string in the app to the browser to save five words.
-      ariaLabel:
-        copy.monthAria(entry.month, weeksLabel) +
-        (entry.month === feed.thisMonth ? copy.hereSuffix : ""),
-      href: hrefFor(entry.month, undefined, category),
+      ariaLabel: copy.monthAria(entry.month, weeksLabel) + suffix[status],
+      href: status === "locked" ? undefined : hrefFor(entry.month, undefined, category),
       active: entry.month === feed.month,
-      current: entry.month === feed.thisMonth,
+      status,
     }
   })
+}
+
+/**
+ * Where a month stands against hers. Anything beyond the one either side is
+ * shut: `finished` when it is already behind her, `locked` when still ahead.
+ */
+function statusOf(month: number, thisMonth: number): MonthStatus {
+  if (month === thisMonth) return "current"
+  if (!isMonthOpen(month, thisMonth)) return month < thisMonth ? "finished" : "locked"
+  return month < thisMonth ? "previous" : "next"
 }
 
 /**
@@ -222,10 +238,9 @@ function monthCards(
 function weekChips(
   feed: MonthFeed,
   selected: number | undefined,
-  category: ContentCategory | undefined,
-  language: Language
+  category: ContentCategory | undefined
 ): CarouselWeek[] {
-  const copy = copyFor(language).guidance
+  const copy = strings.guidance
   const inCategory = category
     ? feed.items.filter((item) => item.category === category)
     : feed.items
@@ -315,7 +330,7 @@ function CategoryFilter({
   month: number
   week?: number
   selected?: ContentCategory
-  /** "All" in the reader's language; every other chip is worded by the API. */
+  /** "All"; every other chip is worded by the API. */
   allLabel: string
 }) {
   const present: ContentCategory[] = []
@@ -392,10 +407,9 @@ function covers(week: number) {
 function emptyMessage(
   feed: MonthFeed,
   week: number | undefined,
-  category: ContentCategory | undefined,
-  language: Language
+  category: ContentCategory | undefined
 ): string {
-  const copy = copyFor(language).guidance
+  const copy = strings.guidance
 
   if (feed.items.length === 0) {
     return copy.nothingForMonth(feed.month)

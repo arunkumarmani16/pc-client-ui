@@ -1,17 +1,19 @@
 import Link from "next/link"
+import type { Metadata } from "next"
 import { ArrowRightIcon, BookOpenIcon, CalendarDaysIcon } from "lucide-react"
 
 import { ContentCard } from "@/components/content/ContentCard"
 import { PageHeader } from "@/components/global/PageHeader"
 import type { Feed } from "@/interface"
-import type { Language } from "@/lib/i18n"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { requireAuthConfig, requireSession } from "@/lib/auth/session"
-import { currentLanguage } from "@/lib/language"
 import { formatDate } from "@/lib/format"
+import { strings } from "@/lib/strings"
 import { getFeed } from "@/service"
 
-export const metadata = { title: "Home" }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: strings.home.title }
+}
 
 /** How many pieces the home page previews before sending her to the full week. */
 const PREVIEW_COUNT = 3
@@ -28,51 +30,42 @@ export default async function HomePage() {
   const { patient } = await requireSession()
   const { pregnancy } = patient
 
-  // The preview cards are the same component the guidance page uses, so they
-  // follow her language even though this page's own prose does not yet.
-  const language = await currentLanguage()
-  const feed = await previewFeed(language)
+  const copy = strings
+  const feed = await previewFeed()
 
   return (
     <>
-      <PageHeader
-        title={`Hello, ${patient.firstName}`}
-        description="Here is where your pregnancy is today."
-      />
+      <PageHeader title={copy.home.hello(patient.firstName)} description={copy.home.intro} />
 
       <div className="space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6">
         <ProgressCard
-          week={pregnancy.currentWeek}
-          ageLabel={pregnancy.ageLabel}
-          trimesterLabel={pregnancy.trimesterLabel}
+          heading={copy.home.howFarAlong}
+          weekLabel={copy.nav.weekBadge(pregnancy.currentWeek)}
+          ageLabel={copy.pregnancy.age(pregnancy.weeks, pregnancy.days)}
+          trimesterLabel={copy.guidance.trimester(pregnancy.trimester)}
+          progressLabel={copy.home.progressAria}
           progressPercent={pregnancy.progressPercent}
         />
 
         <div className="stagger grid gap-3 sm:grid-cols-2">
           <SummaryCard
             icon={<CalendarDaysIcon className="size-4" />}
-            label="Due date"
+            label={copy.home.dueDate}
             value={formatDate(patient.eddDate)}
-            hint={pregnancy.dueDateLabel}
+            hint={copy.pregnancy.dueDate(pregnancy.daysUntilDueDate)}
           />
           <SummaryCard
             icon={<BookOpenIcon className="size-4" />}
-            label="This week"
+            label={copy.home.thisWeek}
             value={feed ? `${feed.items.length}` : "—"}
-            hint={
-              feed
-                ? feed.items.length === 1
-                  ? "piece of guidance for you"
-                  : "pieces of guidance for you"
-                : "Guidance could not be loaded"
-            }
+            hint={feed ? copy.home.piecesForYou(feed.items.length) : copy.home.couldNotLoad}
           />
         </div>
 
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-semibold tracking-tight text-foreground">
-              For week {pregnancy.currentWeek}
+              {copy.home.forWeek(pregnancy.currentWeek)}
             </h2>
             {feed && feed.items.length > PREVIEW_COUNT && (
               <Link
@@ -82,27 +75,20 @@ export default async function HomePage() {
                 // A count here would be contradicted by the page it leads to.
                 className="flex shrink-0 items-center gap-1 rounded-md text-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                All guidance
+                {copy.content.allGuidance}
                 <ArrowRightIcon className="size-3.5" />
               </Link>
             )}
           </div>
 
           {feed === null ? (
-            <Notice>
-              We could not load your guidance just now. Please refresh the page,
-              or try again in a moment.
-            </Notice>
+            <Notice>{copy.home.loadFailed}</Notice>
           ) : feed.items.length === 0 ? (
-            <Notice>
-              There is nothing published for week {pregnancy.currentWeek} yet.
-              Your clinic adds material as your pregnancy goes on — do have a
-              look at the other weeks in the meantime.
-            </Notice>
+            <Notice>{copy.home.nothingForWeek(pregnancy.currentWeek)}</Notice>
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
               {feed.items.slice(0, PREVIEW_COUNT).map((content) => (
-                <ContentCard key={content.contentId} content={content} language={language} />
+                <ContentCard key={content.contentId} content={content} />
               ))}
             </div>
           )}
@@ -119,9 +105,9 @@ export default async function HomePage() {
  * and when the baby is due — come from the session and are the reason she
  * opened the app. A content outage should cost her the list, not the page.
  */
-async function previewFeed(language: Language): Promise<Feed | null> {
+async function previewFeed(): Promise<Feed | null> {
   try {
-    return await getFeed({ lang: language }, await requireAuthConfig())
+    return await getFeed({}, await requireAuthConfig())
   } catch (error) {
     console.error("Could not load the week's guidance", error)
     return null
@@ -130,23 +116,27 @@ async function previewFeed(language: Language): Promise<Feed | null> {
 
 /** The one figure everything else is read against, given the room to say so. */
 function ProgressCard({
-  week,
+  heading,
+  weekLabel,
   ageLabel,
   trimesterLabel,
+  progressLabel,
   progressPercent,
 }: {
-  week: number
+  heading: string
+  weekLabel: string
   ageLabel: string
   trimesterLabel: string
+  progressLabel: string
   progressPercent: number
 }) {
   return (
     <section className="animate-rise overflow-hidden rounded-xl border bg-card">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 p-4 sm:p-5">
         <div>
-          <h2 className="text-sm text-muted-foreground">How far along</h2>
+          <h2 className="text-sm text-muted-foreground">{heading}</h2>
           <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
-            Week {week}
+            {weekLabel}
           </p>
           <p className="mt-0.5 text-sm text-muted-foreground">{ageLabel}</p>
         </div>
@@ -165,7 +155,7 @@ function ProgressCard({
         aria-valuenow={progressPercent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Pregnancy progress"
+        aria-label={progressLabel}
         className="h-1.5 w-full bg-muted"
       >
         <div

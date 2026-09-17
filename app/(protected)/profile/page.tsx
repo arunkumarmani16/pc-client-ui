@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import {
   BabyIcon,
   CalendarDaysIcon,
@@ -9,9 +10,12 @@ import {
 
 import { PageHeader } from "@/components/global/PageHeader"
 import { requireSession } from "@/lib/auth/session"
-import { formatDate, formatMeasure, orDash, plural } from "@/lib/format"
+import { formatDate, formatMeasure, orDash } from "@/lib/format"
+import { strings } from "@/lib/strings"
 
-export const metadata = { title: "My details" }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: strings.profile.title }
+}
 
 /**
  * What the clinic has on record, in the words a mother would use for it.
@@ -29,69 +33,68 @@ export default async function ProfilePage() {
   const { patient } = await requireSession()
   const { pregnancy } = patient
 
+  const all = strings
+  const copy = all.profile
+
   return (
     <>
-      <PageHeader
-        title="My details"
-        description="What your clinic has on record for you."
-      />
+      <PageHeader title={copy.title} description={copy.intro} />
 
       <div className="stagger space-y-4 px-4 py-4 sm:px-6 sm:py-6">
-        <Card icon={<BabyIcon className="size-4" />} title="This pregnancy">
-          <Row label="How far along" value={pregnancy.ageLabel} />
-          <Row label="Stage" value={pregnancy.trimesterLabel} />
+        <Card icon={<BabyIcon className="size-4" />} title={copy.thisPregnancy}>
           <Row
-            label="Due date"
+            label={copy.howFarAlong}
+            value={all.pregnancy.age(pregnancy.weeks, pregnancy.days)}
+          />
+          <Row label={copy.stage} value={all.guidance.trimester(pregnancy.trimester)} />
+          <Row
+            label={copy.dueDate}
             value={formatDate(patient.eddDate)}
-            hint={pregnancy.dueDateLabel}
+            hint={all.pregnancy.dueDate(pregnancy.daysUntilDueDate)}
           />
-          <Row label="Last period began" value={formatDate(patient.lmpDate)} />
+          <Row label={copy.lastPeriod} value={formatDate(patient.lmpDate)} />
         </Card>
 
-        <Card icon={<HeartPulseIcon className="size-4" />} title="Pregnancy history">
+        <Card icon={<HeartPulseIcon className="size-4" />} title={copy.history}>
+          <Row label={copy.pregnancies} value={String(patient.gravida)} />
+          <Row label={copy.births} value={String(patient.para)} />
+          <Row label={copy.losses} value={String(patient.abortions)} />
+          <Row label={copy.livingChildren} value={String(patient.livingChildren)} />
+        </Card>
+
+        <Card icon={<UserRoundIcon className="size-4" />} title={copy.aboutYou}>
+          <Row label={copy.name} value={patient.fullName} />
           <Row
-            label="Pregnancies, including this one"
-            value={String(patient.gravida)}
+            label={copy.age}
+            value={patient.age != null ? copy.years(patient.age) : "—"}
           />
-          <Row label="Births after 20 weeks" value={String(patient.para)} />
-          <Row label="Earlier losses" value={String(patient.abortions)} />
-          <Row label="Living children" value={String(patient.livingChildren)} />
+          <Row label={copy.dateOfBirth} value={formatDate(patient.dateOfBirth)} />
+          <Row label={copy.bloodGroup} value={orDash(patient.bloodGroup)} />
+          <Row label={copy.height} value={formatMeasure(patient.heightCm, "cm")} />
+          <Row label={copy.weight} value={formatMeasure(patient.weightKg, "kg")} />
+          <Row label={copy.bloodPressure} value={orDash(patient.bloodPressure)} />
         </Card>
 
-        <Card icon={<UserRoundIcon className="size-4" />} title="About you">
-          <Row label="Name" value={patient.fullName} />
+        <Card icon={<PhoneIcon className="size-4" />} title={copy.contact}>
+          <Row label={copy.mobile} value={patient.mobileNumber} />
+          <Row label={copy.email} value={orDash(patient.email)} />
+          <Row label={copy.address} value={orDash(patient.address)} />
+          <Row label={copy.spouse} value={orDash(patient.spouseName)} />
+          <Row label={copy.emergencyContact} value={orDash(patient.emergencyContact)} />
+        </Card>
+
+        <Card icon={<ShieldCheckIcon className="size-4" />} title={copy.yourLogin}>
+          <Row label={copy.signInWith} value={patient.username} />
           <Row
-            label="Age"
-            value={patient.age != null ? plural(patient.age, "year") : "—"}
-          />
-          <Row label="Date of birth" value={formatDate(patient.dateOfBirth)} />
-          <Row label="Blood group" value={orDash(patient.bloodGroup)} />
-          <Row label="Height" value={formatMeasure(patient.heightCm, "cm")} />
-          <Row label="Weight" value={formatMeasure(patient.weightKg, "kg")} />
-          <Row label="Blood pressure" value={orDash(patient.bloodPressure)} />
-        </Card>
-
-        <Card icon={<PhoneIcon className="size-4" />} title="Contact">
-          <Row label="Mobile" value={patient.mobileNumber} />
-          <Row label="Email" value={orDash(patient.email)} />
-          <Row label="Address" value={orDash(patient.address)} />
-          <Row label="Spouse" value={orDash(patient.spouseName)} />
-          <Row label="Emergency contact" value={orDash(patient.emergencyContact)} />
-        </Card>
-
-        <Card icon={<ShieldCheckIcon className="size-4" />} title="Your login">
-          <Row label="You sign in with" value={patient.username} />
-          <Row
-            label="Access until"
+            label={copy.accessUntil}
             value={formatDate(patient.accountActiveUntil)}
-            hint="A month after your due date, to cover your first weeks at home."
+            hint={copy.accessUntilHint}
           />
         </Card>
 
         <p className="flex items-start gap-2 px-1 text-xs leading-relaxed text-muted-foreground">
           <CalendarDaysIcon className="mt-0.5 size-3.5 shrink-0 text-primary" />
-          Something here not right? Tell your clinic at your next visit and they
-          will put it straight — these details can only be changed by them.
+          {copy.correction}
         </p>
       </div>
     </>

@@ -15,7 +15,7 @@
  * `pc-ui/lib/pregnancy/pregnancy-calendar.ts`.
  */
 
-import { copyFor, type Language } from "@/lib/i18n"
+import { strings } from "@/lib/strings"
 
 export const MIN_MONTH = 1
 export const MAX_MONTH = 10
@@ -63,6 +63,26 @@ export function clampMonth(month: number): number {
   return Math.min(Math.max(Math.trunc(month), MIN_MONTH), MAX_MONTH)
 }
 
+/** How many months either side of hers can be opened; everything further is locked. */
+export const OPEN_MONTHS_AROUND = 1
+
+/**
+ * Whether a month can be read yet: the month she is in, the one before it and
+ * the one after it. Anything further away is locked — shown, but not opened.
+ */
+export function isMonthOpen(month: number, thisMonth: number): boolean {
+  return Math.abs(clampMonth(month) - clampMonth(thisMonth)) <= OPEN_MONTHS_AROUND
+}
+
+/** The first and last month she can open, held inside the calendar. */
+export function openMonthsAround(thisMonth: number): { first: number; last: number } {
+  const resolved = clampMonth(thisMonth)
+  return {
+    first: clampMonth(resolved - OPEN_MONTHS_AROUND),
+    last: clampMonth(resolved + OPEN_MONTHS_AROUND),
+  }
+}
+
 /**
  * Every gestational week a month's content can be filed under.
  *
@@ -85,13 +105,10 @@ export function weeksOf(month: number): number[] {
 /**
  * e.g. `"weeks 17–20"`, the span a month's material is written for.
  *
- * <p>The numbers are the calendar's, the words are the reader's — which is why
- * the wording comes from `lib/i18n.ts` rather than being written out here. The
- * digits stay western in every language: they are what a mother checks against
- * her clinic's card, which is written that way.
+ * <p>The numbers are the calendar's; the wording comes from `lib/strings.ts`.
  */
-export function weeksLabelOf(month: number, language?: Language): string {
-  return copyFor(language).guidance.weeksLabel(startWeekOf(month), endWeekOf(month))
+export function weeksLabelOf(month: number): string {
+  return strings.guidance.weeksLabel(startWeekOf(month), endWeekOf(month))
 }
 
 /**
@@ -101,10 +118,10 @@ export function weeksLabelOf(month: number, language?: Language): string {
  * and 27 and 28 are third, so it is named as both rather than as whichever
  * end happened to be measured.
  */
-export function trimesterLabelOf(month: number, language?: Language): string {
+export function trimesterLabelOf(month: number): string {
   const first = trimesterOf(startWeekOf(month))
   const last = trimesterOf(endWeekOf(month))
-  const copy = copyFor(language).guidance
+  const copy = strings.guidance
 
   return first === last ? copy.trimester(first) : copy.trimesterSpan(first, last)
 }
@@ -112,9 +129,7 @@ export function trimesterLabelOf(month: number, language?: Language): string {
 /**
  * The ten months with their week spans, for the month picker.
  *
- * <p>Numbers only. The labels used to live here too, but they are language-
- * dependent and this is not: a constant computed once at module load cannot
- * know which language the request that reads it is in.
+ * <p>Numbers only; the labels are worded by the page that shows them.
  */
 export const PREGNANCY_MONTHS = Array.from({ length: MAX_MONTH }, (_, index) => {
   const month = index + 1

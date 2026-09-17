@@ -1,4 +1,4 @@
-import { CheckIcon, XIcon } from "lucide-react"
+import { BanIcon, CheckIcon, ThumbsUpIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -8,6 +8,11 @@ import { cn } from "@/lib/utils"
  * <p>Colour is not the only thing separating them — a tick and a cross carry
  * the same distinction, so the two lists still read apart in greyscale and for
  * anyone who cannot tell the green from the amber.
+ *
+ * <p>The signs are drawn large for the same reason the cards lead with a
+ * picture: a mother who cannot read the heading should still see a thumbs-up
+ * over one list and a no-entry sign over the other, and a filled tick or cross
+ * beside every line.
  */
 export function GuidelineList({
   kind,
@@ -16,13 +21,14 @@ export function GuidelineList({
 }: {
   kind: "do" | "dont"
   items: string[]
-  /** "Do" / "Avoid", in the language the page is being read in. */
+  /** "Do" / "Avoid". */
   heading: string
 }) {
   if (items.length === 0) return null
 
   const isDo = kind === "do"
-  const Icon = isDo ? CheckIcon : XIcon
+  const Sign = isDo ? ThumbsUpIcon : BanIcon
+  const Mark = isDo ? CheckIcon : XIcon
 
   return (
     <section
@@ -33,39 +39,41 @@ export function GuidelineList({
     >
       <h2
         className={cn(
-          "flex items-center gap-2 text-sm font-semibold",
+          "flex items-center gap-3 text-base font-semibold",
           isDo ? "text-stable" : "text-caution"
         )}
       >
         <span
           className={cn(
-            "flex size-5 items-center justify-center rounded-full",
+            "flex size-11 shrink-0 items-center justify-center rounded-full",
             isDo ? "bg-stable/15" : "bg-caution/15"
           )}
           aria-hidden
         >
-          <Icon className="size-3.5" />
+          <Sign className="size-6" />
         </span>
         {heading}
       </h2>
 
-      <ul className="mt-3 space-y-2.5">
+      <ul className="mt-4 space-y-3">
         {items.map((item, index) => (
-          <li key={index} className="flex gap-2.5 text-sm leading-relaxed text-foreground">
-            <Icon
+          <li key={index} className="flex items-start gap-3 text-sm leading-relaxed text-foreground">
+            <span
               className={cn(
-                "mt-0.5 size-4 shrink-0",
-                isDo ? "text-stable" : "text-caution"
+                "flex size-6 shrink-0 items-center justify-center rounded-full text-white",
+                isDo ? "bg-stable" : "bg-caution"
               )}
               aria-hidden
-            />
+            >
+              <Mark className="size-4" strokeWidth={3} />
+            </span>
             {/*
               Server-sanitised HTML: RichTextSanitizer runs an allowlist pass
               over each line on the way in, which is what makes rendering it
               here safe. Staff use it for the odd bold word or link.
             */}
             <span
-              className="min-w-0 [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold"
+              className="min-w-0 pt-px [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold"
               dangerouslySetInnerHTML={{ __html: item }}
             />
           </li>

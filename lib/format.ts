@@ -1,22 +1,19 @@
-/**
- * Fixed locale and time zone so the server and the client render the same
- * string; anything locale-dependent would trip a hydration mismatch. The same
- * format as the staff console, so a date reads identically in both.
- */
-const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "2-digit",
   month: "short",
   year: "numeric",
   timeZone: "UTC",
-})
+}
+
+/**
+ * A fixed locale and time zone, so the server and the client render the same
+ * string; the browser's own locale would trip a hydration mismatch. The staff
+ * console uses the same format, so a date reads identically in both.
+ */
+const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", DATE_OPTIONS)
 
 export function formatDate(value?: string | null): string {
   return value ? DATE_FORMAT.format(new Date(value)) : "—"
-}
-
-/** "1 week", "3 weeks". */
-export function plural(count: number, unit: string): string {
-  return `${count} ${unit}${count === 1 ? "" : "s"}`
 }
 
 /**

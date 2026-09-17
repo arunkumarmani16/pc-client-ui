@@ -62,16 +62,8 @@ export interface Content {
   startWeek: number
   endWeek: number
   trimester: 1 | 2 | 3
-  /** e.g. "Month 5 · weeks 17-20", in the language asked for. */
+  /** e.g. "Month 5 · weeks 17-20". */
   rangeLabel: string
-
-  /**
-   * The language this piece's own words are in — "ta" only where the clinic
-   * has an approved, current translation of it, "en" otherwise. The labels
-   * above always follow the language she chose, so a single piece can be
-   * English text under Tamil labels while the clinic works through the month.
-   */
-  language: string
 }
 
 /**
@@ -92,8 +84,6 @@ export interface Feed {
   thisWeek: number
   minWeek: number
   maxWeek: number
-  /** The language the feed was asked for. Each item says what it came back as. */
-  language: string
   items: Content[]
 }
 
@@ -103,8 +93,6 @@ export interface FeedQuery {
   week?: number
   type?: ContentType
   category?: ContentCategory
-  /** ISO code; omit for English. */
-  lang?: string
 }
 
 /**
@@ -132,14 +120,10 @@ export interface MonthFeed {
   thisWeek: number
   minMonth: number
   maxMonth: number
-  /** The language the month was asked for. */
-  language: string
-  /**
-   * True when at least one piece in the month came back in English because the
-   * clinic has not translated it yet — so the page can say so once, rather than
-   * every card carrying the same badge.
-   */
-  partiallyTranslated: boolean
+  /** First month she can open: the one before hers. Earlier months are locked. */
+  firstOpenMonth: number
+  /** Last month she can open: the one after hers. Later months are locked. */
+  lastOpenMonth: number
   /** Everything published for the month, in the order staff filed it. */
   items: Content[]
 }

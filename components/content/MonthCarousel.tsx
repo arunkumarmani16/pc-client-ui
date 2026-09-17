@@ -2,31 +2,38 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { LockIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+
+/**
+ * Where a month stands against the one she is in. Only the month either side
+ * of hers can be opened. `finished` is a month already behind her and `locked`
+ * one still ahead; both are shown but cannot be opened.
+ */
+export type MonthStatus = "finished" | "previous" | "current" | "next" | "locked"
 
 /**
  * One month card in the strip.
  *
  * <p>Hrefs and wording are both built on the server; this only draws them.
  * That is why the labels arrive as strings rather than being assembled here
- * from the number: the app is read in more than one language, and a client
- * component that worded its own cards would have to be shipped the whole
- * dictionary to do it.
+ * from the number: a client component that worded its own cards would have
+ * to be shipped the whole string table to do it.
  */
 export interface CarouselMonth {
   month: number
-  /** "Month", or the same word in the language she is reading. */
+  /** "Month". */
   monthLabel: string
   /** e.g. "17–20", the weeks the month covers. */
   weeksLabel: string
-  /** The whole card spelled out for a screen reader, in her language. */
+  /** The whole card spelled out for a screen reader. */
   ariaLabel: string
-  href: string
+  /** Absent on a locked month, which cannot be opened. */
+  href?: string
   /** The month being read. */
   active: boolean
-  /** The month she is actually in, whichever one she is reading. */
-  current: boolean
+  status: MonthStatus
 }
 
 /** One week chip under the months, including the "All" one. */
@@ -34,12 +41,42 @@ export interface CarouselWeek {
   /** Undefined on the "All weeks" chip. */
   week?: number
   label: string
-  /** The chip and its count spelled out for a screen reader, in her language. */
+  /** The chip and its count spelled out for a screen reader. */
   ariaLabel: string
   href: string
   active: boolean
   current: boolean
   count: number
+}
+
+/**
+ * A colour per open month: pink for the month she has finished, teal for the
+ * one she is in, blue for the one ahead. Picked from tokens that already carry
+ * a dark-mode variant, and kept clear of `caution`, which the app reserves for
+ * warnings.
+ */
+const MONTH_TONES: Record<"previous" | "current" | "next", { idle: string; active: string }> = {
+  previous: {
+    idle: "border-blush/30 bg-blush-soft text-blush hover:border-blush/60",
+    active: "border-blush bg-blush-soft text-blush ring-1 ring-blush",
+  },
+  current: {
+    idle: "border-primary/40 bg-primary/10 text-primary hover:border-primary/70",
+    active: "border-primary bg-primary/10 text-primary ring-1 ring-primary",
+  },
+  next: {
+    idle: "border-info/30 bg-info-soft text-info hover:border-info/60",
+    active: "border-info bg-info-soft text-info ring-1 ring-info",
+  },
+}
+
+/**
+ * Shut months. A finished one keeps a faded pink so the strip reads as done
+ * behind her; one still ahead stays grey.
+ */
+const SHUT_TONES: Record<"finished" | "locked", string> = {
+  finished: "border-blush/30 bg-blush-soft/50 text-blush/60",
+  locked: "border-border bg-muted/40 text-muted-foreground/60",
 }
 
 /**
@@ -102,6 +139,9 @@ function MonthRail({
     settled.current = true
   }, [activeMonth])
 
+  const shape =
+    "flex w-[4.5rem] shrink-0 snap-center flex-col items-center gap-0.5 rounded-xl border py-2 leading-none transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+
   return (
     <div
       ref={rail}
@@ -109,34 +149,50 @@ function MonthRail({
       // not against whatever happens to be positioned further up the page.
       className="no-scrollbar relative flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth"
     >
-      {months.map((entry) => (
-        <Link
-          key={entry.month}
-          ref={entry.active ? selected : undefined}
-          href={entry.href}
-          aria-current={entry.active ? "page" : undefined}
-          // Spelled out for a screen reader, which has neither the weeks under
-          // the number nor the outline marking where she is.
-          aria-label={entry.ariaLabel}
-          className={cn(
-            "flex w-[4.5rem] shrink-0 snap-center flex-col items-center gap-0.5 rounded-xl border py-2 leading-none transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-            entry.active
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
-            // Her own month keeps a mark of its own while she reads another, so
-            // the strip never loses where she actually is.
-            entry.current && !entry.active && "border-primary/40"
-          )}
-        >
-          <span className="text-[0.5625rem] font-medium tracking-wide uppercase opacity-70">
-            {entry.monthLabel}
-          </span>
-          <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
-          <span className="text-[0.625rem] tabular-nums opacity-70">
-            {entry.weeksLabel}
-          </span>
-        </Link>
-      ))}
+      {months.map((entry) => {
+        if (entry.status === "finished" || entry.status === "locked" || !entry.href) {
+          // Not a link, so there is nothing to tab to or tap that goes nowhere.
+          // Still drawn, so she can see how far the months run.
+          return (
+            <span
+              key={entry.month}
+              role="link"
+              aria-disabled="true"
+              aria-label={entry.ariaLabel}
+              className={cn(
+                shape,
+                "cursor-not-allowed border-dashed",
+                SHUT_TONES[entry.status === "finished" ? "finished" : "locked"]
+              )}
+            >
+              <LockIcon className="size-[0.5625rem]" aria-hidden />
+              <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
+              <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
+            </span>
+          )
+        }
+
+        const tone = MONTH_TONES[entry.status]
+
+        return (
+          <Link
+            key={entry.month}
+            ref={entry.active ? selected : undefined}
+            href={entry.href}
+            aria-current={entry.active ? "page" : undefined}
+            // Spelled out for a screen reader, which has neither the weeks under
+            // the number nor the colour marking which month this is.
+            aria-label={entry.ariaLabel}
+            className={cn(shape, entry.active ? tone.active : tone.idle)}
+          >
+            <span className="text-[0.5625rem] font-medium tracking-wide uppercase opacity-70">
+              {entry.monthLabel}
+            </span>
+            <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
+            <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
+          </Link>
+        )
+      })}
     </div>
   )
 }

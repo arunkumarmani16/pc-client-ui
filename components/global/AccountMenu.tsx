@@ -18,6 +18,19 @@ import { toast } from "@/components/ui/toast"
 import type { Patient } from "@/interface"
 import { LOGIN_PATH, SIGN_OUT_PATH } from "@/lib/auth/cookies"
 
+/**
+ * The menu's words. Passed in as plain strings
+ * for the same reason as `NavLabels`: this is a client component, and the
+ * dictionary stays on the server.
+ */
+export type AccountLabels = {
+  menu: string
+  signOut: string
+  signingOut: string
+  signOutFailed: string
+  tryAgain: string
+}
+
 function initials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return "?"
@@ -25,7 +38,7 @@ function initials(fullName: string): string {
     .toUpperCase()
 }
 
-export function AccountMenu({ patient }: { patient: Patient }) {
+export function AccountMenu({ patient, labels }: { patient: Patient; labels: AccountLabels }) {
   const router = useRouter()
   const [isSigningOut, setSigningOut] = React.useState(false)
 
@@ -43,8 +56,8 @@ export function AccountMenu({ patient }: { patient: Patient }) {
       console.error("Sign out failed", error)
       toast.add({
         type: "error",
-        title: "Could not sign out",
-        description: "Please try again.",
+        title: labels.signOutFailed,
+        description: labels.tryAgain,
       })
       setSigningOut(false)
     }
@@ -53,7 +66,7 @@ export function AccountMenu({ patient }: { patient: Patient }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Account"
+        aria-label={labels.menu}
         className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <Avatar>
@@ -76,7 +89,7 @@ export function AccountMenu({ patient }: { patient: Patient }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut} disabled={isSigningOut}>
           <LogOutIcon />
-          {isSigningOut ? "Signing out..." : "Sign out"}
+          {isSigningOut ? labels.signingOut : labels.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
