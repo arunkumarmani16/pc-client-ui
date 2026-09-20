@@ -15,7 +15,7 @@
  * `pc-ui/lib/pregnancy/pregnancy-calendar.ts`.
  */
 
-import { strings } from "@/lib/strings"
+import { strings, type Strings } from "@/lib/strings"
 
 export const MIN_MONTH = 1
 export const MAX_MONTH = 10
@@ -107,8 +107,8 @@ export function weeksOf(month: number): number[] {
  *
  * <p>The numbers are the calendar's; the wording comes from `lib/strings.ts`.
  */
-export function weeksLabelOf(month: number): string {
-  return strings.guidance.weeksLabel(startWeekOf(month), endWeekOf(month))
+export function weeksLabelOf(month: number, words: Strings = strings): string {
+  return words.guidance.weeksLabel(startWeekOf(month), endWeekOf(month))
 }
 
 /**
@@ -118,10 +118,10 @@ export function weeksLabelOf(month: number): string {
  * and 27 and 28 are third, so it is named as both rather than as whichever
  * end happened to be measured.
  */
-export function trimesterLabelOf(month: number): string {
+export function trimesterLabelOf(month: number, words: Strings = strings): string {
   const first = trimesterOf(startWeekOf(month))
   const last = trimesterOf(endWeekOf(month))
-  const copy = strings.guidance
+  const copy = words.guidance
 
   return first === last ? copy.trimester(first) : copy.trimesterSpan(first, last)
 }

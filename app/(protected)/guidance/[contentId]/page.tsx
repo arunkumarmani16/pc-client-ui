@@ -11,7 +11,10 @@ import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle, typeStyle } from "@/lib/content"
 import { requireAuthConfig, requireSession } from "@/lib/auth/session"
 import { isMonthOpen, monthOf } from "@/lib/pregnancy"
-import { strings } from "@/lib/strings"
+import { stringsFor } from "@/lib/strings"
+import { currentLanguage } from "@/lib/translation/current"
+import { DEFAULT_LANGUAGE, type Language } from "@/lib/translation/languages"
+import { translateContent } from "@/lib/translation/translate"
 import { cn } from "@/lib/utils"
 import { ApiError, getContent } from "@/service"
 
@@ -27,7 +30,8 @@ type Params = Promise<{ contentId: string }>
  */
 export default async function ContentPage({ params }: { params: Params }) {
   const { contentId } = await params
-  const content = await loadContent(contentId)
+  const language = await currentLanguage()
+  const content = await loadContent(contentId, language)
 
   // A piece from a locked month is not opened by its link either: the month
   // strip hides it, and a shared or bookmarked URL must not be the way round.
@@ -37,7 +41,8 @@ export default async function ContentPage({ params }: { params: Params }) {
     redirect(GUIDANCE_PATH)
   }
 
-  const copy = strings.content
+  const words = stringsFor(language)
+  const copy = words.content
   const { icon: CategoryIcon, chip } = categoryStyle(content.category)
   const { icon: TypeIcon } = typeStyle(content.contentType)
 
@@ -89,13 +94,22 @@ export default async function ContentPage({ params }: { params: Params }) {
           {content.title}
         </h1>
         <p className="text-sm text-muted-foreground">{content.rangeLabel}</p>
+
+        {/*
+          Health advice she may act on, so a machine translation says it is
+          one. A failed translation says nothing: the page is simply in
+          English, and the notice only added noise.
+        */}
+        {language !== DEFAULT_LANGUAGE && content.language === language && (
+          <p className="text-xs text-muted-foreground">{copy.machineTranslated}</p>
+        )}
       </header>
 
       <div className="mt-6 space-y-6">
         {content.videos.length > 0 && (
           <section className="space-y-4">
             {content.videos.map((video) => (
-              <VideoPlayer key={video.videoId} video={video} />
+              <VideoPlayer key={video.videoId} video={video} copy={words.video} />
             ))}
           </section>
         )}
@@ -144,14 +158,17 @@ export default async function ContentPage({ params }: { params: Params }) {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { contentId } = await params
+  const language = await currentLanguage()
 
   try {
+    // Shares the page's translation: sentences already on their way are
+    // awaited rather than asked for twice.
     const content = await getContent(contentId, await requireAuthConfig())
-    return { title: content.title }
+    return { title: (await translateContent(content, language)).title }
   } catch {
     // The page itself reports the failure; a metadata lookup must not be what
     // decides that, so this falls back to a generic title and lets it.
-    return { title: strings.guidance.title }
+    return { title: stringsFor(language).guidance.title }
   }
 }
 
@@ -161,13 +178,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
  * <p>A draft answers 404 exactly as a missing id does — the API will not tell
  * a mother that an unpublished piece exists, and neither does this.
  */
-async function loadContent(contentId: string): Promise<Content> {
+async function loadContent(contentId: string, language: Language): Promise<Content> {
+  let content: Content
   try {
-    return await getContent(contentId, await requireAuthConfig())
+    content = await getContent(contentId, await requireAuthConfig())
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound()
     }
     throw error
   }
+  // Never throws: a failed translation comes back in English, marked as such.
+  return translateContent(content, language)
 }

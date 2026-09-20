@@ -11,10 +11,11 @@ import {
 import { PageHeader } from "@/components/global/PageHeader"
 import { requireSession } from "@/lib/auth/session"
 import { formatDate, formatMeasure, orDash } from "@/lib/format"
-import { strings } from "@/lib/strings"
+import { stringsFor } from "@/lib/strings"
+import { currentLanguage } from "@/lib/translation/current"
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: strings.profile.title }
+  return { title: stringsFor(await currentLanguage()).profile.title }
 }
 
 /**
@@ -33,7 +34,7 @@ export default async function ProfilePage() {
   const { patient } = await requireSession()
   const { pregnancy } = patient
 
-  const all = strings
+  const all = stringsFor(await currentLanguage())
   const copy = all.profile
 
   return (

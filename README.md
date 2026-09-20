@@ -15,6 +15,17 @@ Configuration lives in `.env`:
 | Variable       | Default                     | Notes                                                    |
 | -------------- | --------------------------- | -------------------------------------------------------- |
 | `API_BASE_URL` | `http://localhost:8080/api` | Server-only. Include the API's `/api` context path.      |
+| `BHASHINI_USER_ID`      | unset                      | Server-only. Bhashini ULCA user id, for Tamil translation of guidance. |
+| `BHASHINI_ULCA_API_KEY` | unset                      | Server-only. Bhashini ULCA API key. Without both, guidance stays in English. |
+| `BHASHINI_PIPELINE_ID`  | `64392f96daac500b55c543cd` | MeitY's pipeline, which serves AI4Bharat IndicTrans2. |
+| `TRANSLATION_ENABLED`   | `true`                     | `false` turns machine translation off without removing the keys. |
+
+## Tamil
+
+A language button in the header switches between English and தமிழ் and remembers the choice in the `portal_language` cookie (`app/api/language`).
+
+- **The app's own words** (menus, headings, topic names) are translated by hand in `lib/strings.ts`.
+- **Guidance** is written by the clinic in English and machine-translated on the server with [AI4Bharat IndicTrans2](https://github.com/AI4Bharat/IndicTrans2) through Bhashini (`lib/translation/`). It is sent sentence by sentence, with the HTML tags of a body left as they are. Translations are cached in memory, so a restart loses them. If a call fails, the piece is shown in English with a note, and a translated piece says it was translated automatically.
 
 ## How it talks to the API
 

@@ -5,9 +5,11 @@ import { HeartPulse } from "lucide-react"
 
 import { AccountMenu, type AccountLabels } from "@/components/global/AccountMenu"
 import { AppNavLinks, type NavLabels } from "@/components/global/AppNav"
+import { LanguageSwitcher } from "@/components/global/LanguageSwitcher"
 import { Badge } from "@/components/ui/badge"
 import type { Patient } from "@/interface"
 import { HOME_PATH } from "@/lib/auth/cookies"
+import type { Language } from "@/lib/translation/languages"
 
 /**
  * The bar across the top of every signed-in page.
@@ -23,11 +25,16 @@ export function AppHeader({
   patient,
   navLabels,
   accountLabels,
+  language,
+  languageLabel,
   weekLabel,
 }: {
   patient: Patient
   navLabels: NavLabels
   accountLabels: AccountLabels
+  language: Language
+  /** "Language", in the language she is reading in. */
+  languageLabel: string
   /** "Week 24", already worded and numbered by the shell. */
   weekLabel: string
 }) {
@@ -52,11 +59,8 @@ export function AppHeader({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
-        {/*
-          The figure a patient orients everything else by. `secondary` rather
-          than one of the clinical variants: those mean states, and a week is
-          not one.
-        */}
+        <LanguageSwitcher current={language} label={languageLabel} />
+
         {/*
           The figure a patient orients everything else by. `secondary` rather
           than one of the clinical variants: those mean states, and a week is

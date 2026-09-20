@@ -8,11 +8,13 @@ import type { Feed } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { requireAuthConfig, requireSession } from "@/lib/auth/session"
 import { formatDate } from "@/lib/format"
-import { strings } from "@/lib/strings"
+import { stringsFor } from "@/lib/strings"
+import { currentLanguage } from "@/lib/translation/current"
+import { translateContents } from "@/lib/translation/translate"
 import { getFeed } from "@/service"
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: strings.home.title }
+  return { title: stringsFor(await currentLanguage()).home.title }
 }
 
 /** How many pieces the home page previews before sending her to the full week. */
@@ -30,8 +32,14 @@ export default async function HomePage() {
   const { patient } = await requireSession()
   const { pregnancy } = patient
 
-  const copy = strings
+  const language = await currentLanguage()
+  const copy = stringsFor(language)
   const feed = await previewFeed()
+
+  // Only the pieces shown are translated; the count above covers the week.
+  const preview = feed
+    ? await translateContents(feed.items.slice(0, PREVIEW_COUNT), language)
+    : []
 
   return (
     <>
@@ -87,8 +95,8 @@ export default async function HomePage() {
             <Notice>{copy.home.nothingForWeek(pregnancy.currentWeek)}</Notice>
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
-              {feed.items.slice(0, PREVIEW_COUNT).map((content) => (
-                <ContentCard key={content.contentId} content={content} />
+              {preview.map((content) => (
+                <ContentCard key={content.contentId} content={content} copy={copy.content} />
               ))}
             </div>
           )}

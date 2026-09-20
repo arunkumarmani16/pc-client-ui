@@ -6,7 +6,7 @@ import type { Content } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle, previewOf, typeStyle } from "@/lib/content"
 import { formatDuration } from "@/lib/format"
-import { strings } from "@/lib/strings"
+import type { Strings } from "@/lib/strings"
 import { cn } from "@/lib/utils"
 
 /**
@@ -21,8 +21,14 @@ import { cn } from "@/lib/utils"
  * and the one that is a video, so the topic is a cartoon, a video has a large
  * play button, and every count at the bottom carries a sign as well as a word.
  */
-export function ContentCard({ content }: { content: Content }) {
-  const copy = strings.content
+export function ContentCard({
+  content,
+  copy,
+}: {
+  content: Content
+  /** The card's words, in the language the page is read in. */
+  copy: Strings["content"]
+}) {
   const { icon: CategoryIcon, chip, tint } = categoryStyle(content.category)
   const { icon: TypeIcon } = typeStyle(content.contentType)
   const preview = previewOf(content.description)

@@ -64,6 +64,13 @@ export interface Content {
   trimester: 1 | 2 | 3
   /** e.g. "Month 5 · weeks 17-20". */
   rangeLabel: string
+
+  /**
+   * Not from the API: set by `lib/translation/translate.ts` to the language
+   * the piece's own words ended up in. "en" under a Tamil page means the
+   * translation failed and the piece is shown as the clinic wrote it.
+   */
+  language?: string
 }
 
 /**
