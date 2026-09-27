@@ -4,8 +4,11 @@ export type { Patient, Pregnancy } from "./patient.interface"
 export type {
   Content,
   ContentCategory,
+  ContentDocument,
   ContentType,
   ContentVideo,
+  DocumentKind,
+  DocumentPage,
   Feed,
   FeedQuery,
   MonthFeed,

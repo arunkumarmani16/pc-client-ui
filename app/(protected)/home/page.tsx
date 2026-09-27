@@ -10,7 +10,7 @@ import { requireAuthConfig, requireSession } from "@/lib/auth/session"
 import { formatDate } from "@/lib/format"
 import { stringsFor } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
-import { translateContents } from "@/lib/translation/translate"
+import { localizeContents } from "@/lib/translation/localize"
 import { getFeed } from "@/service"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,11 +34,12 @@ export default async function HomePage() {
 
   const language = await currentLanguage()
   const copy = stringsFor(language)
-  const feed = await previewFeed()
+  const feed = await previewFeed(language)
 
-  // Only the pieces shown are translated; the count above covers the week.
+  // Only the app's own labels; the pieces arrive in whichever language the
+  // clinic has approved them in.
   const preview = feed
-    ? await translateContents(feed.items.slice(0, PREVIEW_COUNT), language)
+    ? localizeContents(feed.items.slice(0, PREVIEW_COUNT), language)
     : []
 
   return (
@@ -96,7 +97,12 @@ export default async function HomePage() {
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
               {preview.map((content) => (
-                <ContentCard key={content.contentId} content={content} copy={copy.content} />
+                <ContentCard
+                  key={content.contentId}
+                  content={content}
+                  copy={copy.content}
+                  deckCopy={copy.deck}
+                />
               ))}
             </div>
           )}
@@ -113,9 +119,9 @@ export default async function HomePage() {
  * and when the baby is due — come from the session and are the reason she
  * opened the app. A content outage should cost her the list, not the page.
  */
-async function previewFeed(): Promise<Feed | null> {
+async function previewFeed(language: string): Promise<Feed | null> {
   try {
-    return await getFeed({}, await requireAuthConfig())
+    return await getFeed({ lang: language }, await requireAuthConfig())
   } catch (error) {
     console.error("Could not load the week's guidance", error)
     return null

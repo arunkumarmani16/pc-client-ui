@@ -4,17 +4,17 @@ import type { Metadata } from "next"
 import { ArrowLeftIcon, LightbulbIcon } from "lucide-react"
 
 import { CategoryArt } from "@/components/content/CategoryArt"
-import { GuidelineList } from "@/components/content/GuidelineList"
+import { SlideDeck } from "@/components/content/SlideDeck"
 import { VideoPlayer } from "@/components/content/VideoPlayer"
-import type { Content } from "@/interface"
+import type { Content, DocumentKind } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle, typeStyle } from "@/lib/content"
 import { requireAuthConfig, requireSession } from "@/lib/auth/session"
 import { isMonthOpen, monthOf } from "@/lib/pregnancy"
-import { stringsFor } from "@/lib/strings"
+import { type Strings, stringsFor } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/translation/languages"
-import { translateContent } from "@/lib/translation/translate"
+import { localizeContent } from "@/lib/translation/localize"
 import { cn } from "@/lib/utils"
 import { ApiError, getContent } from "@/service"
 
@@ -25,8 +25,8 @@ type Params = Promise<{ contentId: string }>
  *
  * <p>Ordered the way it is used rather than the way it is stored: the picture
  * of what it is about, then the video when there is one, then the explanation,
- * then the single line to act on, then the two lists. A mother who watches the
- * clip and stops has still had the point.
+ * then the single line to act on. A mother who watches the clip and stops has
+ * still had the point.
  */
 export default async function ContentPage({ params }: { params: Params }) {
   const { contentId } = await params
@@ -100,19 +100,55 @@ export default async function ContentPage({ params }: { params: Params }) {
           one. A failed translation says nothing: the page is simply in
           English, and the notice only added noise.
         */}
-        {language !== DEFAULT_LANGUAGE && content.language === language && (
-          <p className="text-xs text-muted-foreground">{copy.machineTranslated}</p>
+        {language !== DEFAULT_LANGUAGE && content.language !== language && (
+          <p className="text-xs text-muted-foreground">{copy.notTranslated}</p>
         )}
       </header>
 
       <div className="mt-6 space-y-6">
+        {/*
+          Headed, where a lone video would not need to be. A clip and a deck
+          are both a bordered black-ish box on a phone, stacked with the same
+          gap between them as everything else — so without a word above each,
+          a deck under a video reads as part of the video rather than as the
+          other thing she can do here.
+        */}
         {content.videos.length > 0 && (
-          <section className="space-y-4">
-            {content.videos.map((video) => (
-              <VideoPlayer key={video.videoId} video={video} copy={words.video} />
-            ))}
+          <section className="space-y-3">
+            <SectionHeading>{copy.watch}</SectionHeading>
+            <div className="space-y-4">
+              {content.videos.map((video) => (
+                <VideoPlayer key={video.videoId} video={video} copy={words.video} />
+              ))}
+            </div>
           </section>
         )}
+
+        {/*
+          Above the written body, with the video. A deck or a handout is the
+          material itself — the clinic's own slides — where the description
+          below is the note around it, so a mother who reads the pages and
+          stops has had the substance.
+
+          One section per document rather than one for all of them: each
+          carries its own heading, because a piece holding a slide deck and a
+          handout is holding two different things and a single heading over
+          both would name only one.
+        */}
+        {content.documents.map((deck) => (
+          <section key={deck.documentId} className="space-y-3">
+            {/*
+              The clinic's own name for it, falling back to what kind of thing
+              it is. A piece carrying two documents used to head both "Slides".
+            */}
+            <SectionHeading>{deck.title || deckLabel(deck.kind, words.deck)}</SectionHeading>
+            <SlideDeck
+              document={deck}
+              copy={words.deck}
+              label={deckLabel(deck.kind, words.deck)}
+            />
+          </section>
+        ))}
 
         {content.description && (
           /*
@@ -144,13 +180,6 @@ export default async function ContentPage({ params }: { params: Params }) {
             </div>
           </aside>
         )}
-
-        {(content.dos.length > 0 || content.donts.length > 0) && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <GuidelineList kind="do" items={content.dos} heading={copy.doThis} />
-            <GuidelineList kind="dont" items={content.donts} heading={copy.avoidThis} />
-          </div>
-        )}
       </div>
     </article>
   )
@@ -163,13 +192,42 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   try {
     // Shares the page's translation: sentences already on their way are
     // awaited rather than asked for twice.
-    const content = await getContent(contentId, await requireAuthConfig())
-    return { title: (await translateContent(content, language)).title }
+    const content = await getContent(contentId, language, await requireAuthConfig())
+    return { title: content.title }
   } catch {
     // The page itself reports the failure; a metadata lookup must not be what
     // decides that, so this falls back to a generic title and lets it.
     return { title: stringsFor(language).guidance.title }
   }
+}
+
+/**
+ * The word over a block of material — "Watch", "Handout", "Slides".
+ *
+ * <p>Deliberately quiet: small, uppercased and muted rather than a second
+ * heading competing with the piece's own title. Its job is to divide, not to
+ * be read.
+ */
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+      {children}
+    </h2>
+  )
+}
+
+/**
+ * What to call a document above its pages.
+ *
+ * <p>Worded here rather than sent by the API, unlike `typeLabel` and
+ * `categoryLabel`: those two name the clinic's own vocabulary and must read
+ * the same in both apps, while this only says what a reader is looking at, and
+ * is one of the app's own words — so it belongs in `lib/strings.ts` with the
+ * rest of them and gets a real translation rather than a machine one.
+ */
+function deckLabel(kind: DocumentKind, copy: Strings["deck"]): string {
+  if (kind === "PRESENTATION") return copy.presentation
+  return kind === "IMAGE" ? copy.image : copy.pdf
 }
 
 /**
@@ -181,13 +239,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 async function loadContent(contentId: string, language: Language): Promise<Content> {
   let content: Content
   try {
-    content = await getContent(contentId, await requireAuthConfig())
+    content = await getContent(contentId, language, await requireAuthConfig())
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound()
     }
     throw error
   }
-  // Never throws: a failed translation comes back in English, marked as such.
-  return translateContent(content, language)
+  // The piece arrives in whichever language the clinic has approved; only the
+  // app's own labels are swapped here.
+  return localizeContent(content, language)
 }

@@ -1,10 +1,10 @@
 import Link from "next/link"
-import { BanIcon, PlayIcon, ThumbsUpIcon } from "lucide-react"
+import { LayersIcon, PlayIcon } from "lucide-react"
 
 import { CategoryArt } from "@/components/content/CategoryArt"
 import type { Content } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
-import { categoryStyle, previewOf, typeStyle } from "@/lib/content"
+import { categoryStyle, pageCountOf, previewOf, typeStyle } from "@/lib/content"
 import { formatDuration } from "@/lib/format"
 import type { Strings } from "@/lib/strings"
 import { cn } from "@/lib/utils"
@@ -24,16 +24,28 @@ import { cn } from "@/lib/utils"
 export function ContentCard({
   content,
   copy,
+  deckCopy,
 }: {
   content: Content
   /** The card's words, in the language the page is read in. */
   copy: Strings["content"]
+  /**
+   * The slideshow's words, for the page count.
+   *
+   * <p>Taken from there rather than given a second wording under `content`:
+   * the card and the deck itself say the same thing about the same document,
+   * and two translations of "12 pages" would eventually disagree.
+   */
+  deckCopy: Strings["deck"]
 }) {
   const { icon: CategoryIcon, chip, tint } = categoryStyle(content.category)
   const { icon: TypeIcon } = typeStyle(content.contentType)
   const preview = previewOf(content.description)
   const video = content.videos[0]
   const duration = formatDuration(video?.durationSeconds)
+  // Every page of every document, since the card says "how much to read" and
+  // not "how many files" — two handouts of six pages is twelve pages to her.
+  const pages = content.documents.reduce((sum, deck) => sum + deck.pageCount, 0)
 
   return (
     <Link
@@ -50,6 +62,20 @@ export function ContentCard({
           <CategoryIcon className={cn("size-4", tint)} aria-hidden />
           {content.categoryLabel}
         </span>
+
+        {/*
+          A deck is worth its own sign for the same reason a video is: it is
+          something she can take in without reading a paragraph first, and the
+          page count is what says whether it is a single handout or a set of
+          slides. Placed opposite the video badge so a piece carrying both
+          still reads at a glance.
+        */}
+        {pages > 0 && (
+          <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+            <LayersIcon className="size-4 text-muted-foreground" aria-hidden />
+            {pageCountOf(deckCopy, pages)}
+          </span>
+        )}
 
         {video && (
           // Big enough to be the thing she notices first: a video is the one
@@ -84,31 +110,6 @@ export function ContentCard({
           </p>
         )}
 
-        {/*
-          What is inside, as signs first and counts second: a thumbs-up for
-          things to do and a no-entry sign for things to avoid read the same in
-          any language. Rendered only when there is something to say.
-        */}
-        {(content.dos.length > 0 || content.donts.length > 0) && (
-          <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-xs font-medium">
-            {content.dos.length > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-stable-soft py-1 pr-2.5 pl-1 text-stable">
-                <span className="flex size-6 items-center justify-center rounded-full bg-stable/15">
-                  <ThumbsUpIcon className="size-3.5" aria-hidden />
-                </span>
-                {copy.dos(content.dos.length)}
-              </span>
-            )}
-            {content.donts.length > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-caution-soft py-1 pr-2.5 pl-1 text-caution">
-                <span className="flex size-6 items-center justify-center rounded-full bg-caution/15">
-                  <BanIcon className="size-3.5" aria-hidden />
-                </span>
-                {copy.toAvoid(content.donts.length)}
-              </span>
-            )}
-          </div>
-        )}
       </div>
     </Link>
   )

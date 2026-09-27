@@ -7,8 +7,9 @@ import type { Language } from "@/lib/translation/languages"
  *
  * <p>Two things are translated in this app and they work differently. These
  * words are written by us, so they are translated here by hand. Guidance is
- * written by the clinic in English and machine-translated on the way to the
- * page — see `lib/translation/translate.ts`.
+ * written by the clinic in English and translated on the API when staff save a
+ * piece, where a clinician reviews it before it is published — so it arrives
+ * already translated and nothing here touches it.
  *
  * <p>The `Strings` type is what keeps the languages in step: a string added to
  * English that is missing from Tamil will not compile.
@@ -95,13 +96,11 @@ const en = {
 
   content: {
     allGuidance: "All guidance",
+    /** Heading over the clips, so the deck below them is plainly not one. */
+    watch: "Watch",
     video: "video",
     videos: "videos",
     oneVideo: "1 video",
-    dos: (count: number) => `${count} ${count === 1 ? "do" : "dos"}`,
-    toAvoid: (count: number) => `${count} to avoid`,
-    doThis: "Do",
-    avoidThis: "Avoid",
     suggestion: "Try this",
 
     /**
@@ -128,8 +127,15 @@ const en = {
       `Month ${month} · ${start === end ? `week ${start}` : `weeks ${start}-${end}`}`,
 
 
-    /** Under a piece that was machine-translated, since it is health advice. */
-    machineTranslated: "Translated automatically.",
+    /**
+     * Under a piece still shown in English on a Tamil page.
+     *
+     * <p>Worded as waiting rather than as a fault, because that is what it is:
+     * the clinic translates a piece and a clinician checks it before it is
+     * published, so an untranslated piece is one that has not reached the front
+     * of that queue yet.
+     */
+    notTranslated: "Not yet available in Tamil — shown as your clinic wrote it.",
   },
 
   home: {
@@ -220,6 +226,40 @@ const en = {
     opensElsewhere: "This video plays on Instagram.",
     watchThere: "Watch on Instagram",
   },
+
+  /**
+   * The slideshow. Every one of these is read on a phone, by someone using one
+   * thumb, so they are short and say what the control does rather than naming
+   * it — "Next page", not "Advance carousel".
+   *
+   * <p>Templates rather than functions, unlike every other block here, and the
+   * reason is the boundary they cross: the deck is a client component, so
+   * React has to serialise these to reach it and a function has no serialised
+   * form. `fill()` in `lib/utils.ts` puts the numbers in.
+   */
+  deck: {
+    /** Names the whole thing for a screen reader, and labels the tap target. */
+    slideshow: "Slideshow",
+    pdf: "Handout",
+    presentation: "Slides",
+    image: "Picture",
+    /** "3 of 12" — the one line that is always on screen. */
+    pageOf: "{page} of {total}",
+    onePage: "1 page",
+    pages: "{count} pages",
+    previousPage: "Previous page",
+    nextPage: "Next page",
+    goToPage: "Go to page {page}",
+    /** On the inline deck, inviting the larger view. */
+    tapToEnlarge: "Tap to enlarge",
+    openFullScreen: "Open full screen",
+    close: "Close",
+    zoomIn: "Zoom in",
+    zoomOut: "Zoom out",
+    /** While a page's image is still coming down. */
+    loading: "Loading page…",
+    unavailable: "This page could not be shown.",
+  },
 }
 
 export type Strings = typeof en
@@ -267,13 +307,10 @@ const ta: Strings = {
 
   content: {
     allGuidance: "அனைத்து வழிகாட்டுதல்கள்",
+    watch: "பாருங்கள்",
     video: "காணொளி",
     videos: "காணொளிகள்",
     oneVideo: "1 காணொளி",
-    dos: (count) => `${count} செய்ய வேண்டியவை`,
-    toAvoid: (count) => `${count} தவிர்க்க வேண்டியவை`,
-    doThis: "செய்யுங்கள்",
-    avoidThis: "தவிர்க்கவும்",
     suggestion: "இதைச் செய்து பாருங்கள்",
 
     types: {
@@ -295,8 +332,7 @@ const ta: Strings = {
       `மாதம் ${month} · ${start === end ? `வாரம் ${start}` : `வாரங்கள் ${start}-${end}`}`,
 
 
-    machineTranslated:
-      "இது தானியங்கி மொழிபெயர்ப்பு. சந்தேகம் இருந்தால் உங்கள் மருத்துவரிடம் கேளுங்கள்.",
+    notTranslated: "இது இன்னும் தமிழில் கிடைக்கவில்லை — உங்கள் மருத்துவமனை எழுதியபடி காட்டப்படுகிறது.",
   },
 
   home: {
@@ -382,6 +418,26 @@ const ta: Strings = {
     fallbackTitle: "காணொளி",
     opensElsewhere: "இந்தக் காணொளி இன்ஸ்டாகிராமில் இயங்கும்.",
     watchThere: "இன்ஸ்டாகிராமில் பாருங்கள்",
+  },
+
+  deck: {
+    slideshow: "படத்தொகுப்பு",
+    pdf: "கையேடு",
+    presentation: "படங்கள்",
+    image: "படம்",
+    pageOf: "{total} இல் {page}",
+    onePage: "1 பக்கம்",
+    pages: "{count} பக்கங்கள்",
+    previousPage: "முந்தைய பக்கம்",
+    nextPage: "அடுத்த பக்கம்",
+    goToPage: "பக்கம் {page} க்குச் செல்",
+    tapToEnlarge: "பெரிதாக்கத் தொடவும்",
+    openFullScreen: "முழுத் திரையில் திற",
+    close: "மூடு",
+    zoomIn: "பெரிதாக்கு",
+    zoomOut: "சிறிதாக்கு",
+    loading: "பக்கம் ஏற்றப்படுகிறது…",
+    unavailable: "இந்தப் பக்கத்தைக் காட்ட முடியவில்லை.",
   },
 }
 

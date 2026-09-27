@@ -15,17 +15,15 @@ Configuration lives in `.env`:
 | Variable       | Default                     | Notes                                                    |
 | -------------- | --------------------------- | -------------------------------------------------------- |
 | `API_BASE_URL` | `http://localhost:8080/api` | Server-only. Include the API's `/api` context path.      |
-| `BHASHINI_USER_ID`      | unset                      | Server-only. Bhashini ULCA user id, for Tamil translation of guidance. |
-| `BHASHINI_ULCA_API_KEY` | unset                      | Server-only. Bhashini ULCA API key. Without both, guidance stays in English. |
-| `BHASHINI_PIPELINE_ID`  | `64392f96daac500b55c543cd` | MeitY's pipeline, which serves AI4Bharat IndicTrans2. |
-| `TRANSLATION_ENABLED`   | `true`                     | `false` turns machine translation off without removing the keys. |
+
 
 ## Tamil
 
 A language button in the header switches between English and தமிழ் and remembers the choice in the `portal_language` cookie (`app/api/language`).
 
 - **The app's own words** (menus, headings, topic names) are translated by hand in `lib/strings.ts`.
-- **Guidance** is written by the clinic in English and machine-translated on the server with [AI4Bharat IndicTrans2](https://github.com/AI4Bharat/IndicTrans2) through Bhashini (`lib/translation/`). It is sent sentence by sentence, with the HTML tags of a body left as they are. Translations are cached in memory, so a restart loses them. If a call fails, the piece is shown in English with a note, and a translated piece says it was translated automatically.
+- **Guidance** is translated on the API, not here. When staff save a piece they can draft a Tamil version with [AI4Bharat IndicTrans2](https://github.com/AI4Bharat/IndicTrans2) through Bhashini, and a clinician reviews and approves it before any mother sees it. This app just asks for `?lang=ta` and reads what comes back; a piece with no approved translation arrives in English, and `content.language` says which it was. Nothing is translated at render time, so no page waits on a model and no unreviewed text reaches a patient.
+- **A document's pages are not translated**, and cannot be: they are pictures by the time they reach this app, so the words in them are whatever the clinic wrote. Only the deck's own furniture — "Handout", "3 of 12", the button labels — is in `lib/strings.ts` with the rest of the app's words.
 
 ## How it talks to the API
 
@@ -42,9 +40,10 @@ The endpoints this app uses:
 | ----------------------------------------------- | ------------------------------------------------------------- |
 | `POST /portal/login`                            | Sign in. The only one that works without a token.             |
 | `GET /portal/me`                                | The signed-in mother's own record.                             |
-| `GET /portal/content?week=&type=&category=`     | A week of published guidance. Defaults to the week she is in. |
-| `GET /portal/content/{id}`                      | One published piece.                                           |
+| `GET /portal/content?week=&type=&category=&lang=` | A week of published guidance. Defaults to the week she is in. `lang` picks the language; an unknown one reads as English. |
+| `GET /portal/content/{id}?lang=`               | One published piece.                                           |
 | `GET /portal/content/{id}/videos/{vid}/stream`  | A video held on the API's own disk.                            |
+| `GET /portal/content/{id}/documents/{did}/pages/{n}` | One page of a document, as an image. Only for pages on the API's own disk. |
 
 None of them takes a patient id: the API resolves the caller from the token, so there is no id for one mother to swap for another's.
 
@@ -62,7 +61,7 @@ app/                  routes: (auth)/login,
                       api/auth/{login,logout}
 components/ui/        shadcn primitives (add more with `npx shadcn add <name>`)
 components/global/    app-wide pieces: header, nav, account menu, loading overlay, page header
-components/content/   the guidance feed: card, video player, do/avoid lists
+components/content/   the guidance feed: card, video player, slide deck
 interface/            API request and response types
 service/              axios client, plus one module per API resource
 lib/                  API config, auth contract and session, loading store, formatting,

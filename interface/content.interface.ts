@@ -36,6 +36,55 @@ export interface ContentVideo {
   posterUrl?: string | null
 }
 
+/** What a document turned out to be. Mirrors `DocumentKind`. */
+export type DocumentKind = "PDF" | "PRESENTATION" | "IMAGE"
+
+/**
+ * One page of a document, as a picture. Mirrors
+ * `PortalDocumentResponse.Page`.
+ *
+ * <p>`widthPx` and `heightPx` are the rendered size, and they travel with the
+ * page so the viewer can reserve its exact box before the image arrives.
+ * Without them every slide is a zero-height box until it loads, and on a phone
+ * that means the page being read jumps out from under the reader.
+ */
+export interface DocumentPage {
+  /** 1-based, as it is shown: "3 of 12". */
+  pageNumber: number
+  /**
+   * Where to fetch it. Relative (our own route) or absolute (a CDN) — pass it
+   * through `mediaUrl` before putting it in an `<img>`.
+   */
+  imageUrl?: string | null
+  widthPx?: number | null
+  heightPx?: number | null
+}
+
+/**
+ * A document on a piece of guidance, as the pages it was converted into.
+ * Mirrors `PortalDocumentResponse`.
+ *
+ * <p>There is no file to download and no viewer to install: a PDF or slide
+ * deck is rasterised on the server at upload, and what arrives here is a list
+ * of pictures. That is the whole reason the feature works on a phone — an
+ * image renders inline in the page she is already on, where a `.pptx` is a
+ * download that may open in nothing at all.
+ */
+export interface ContentDocument {
+  documentId: string
+  /**
+   * What the clinic called it — the heading over its pages.
+   *
+   * <p>Written by staff at upload, so it is a sentence rather than a filename.
+   * The kind ("Slides", "Handout") is the fallback where a piece somehow has
+   * none.
+   */
+  title: string
+  kind: DocumentKind
+  pageCount: number
+  pages: DocumentPage[]
+}
+
 /** A piece of guidance as a mother reads it. Mirrors `PortalContentResponse`. */
 export interface Content {
   contentId: string
@@ -53,10 +102,8 @@ export interface Content {
   suggestion?: string | null
 
   videos: ContentVideo[]
-  /** "Do this" lines, in the order staff arranged them. */
-  dos: string[]
-  /** "Avoid this" lines, in the order staff arranged them. */
-  donts: string[]
+  /** Documents to page through, shown as a slideshow. */
+  documents: ContentDocument[]
 
   pregnancyMonth: number
   startWeek: number
@@ -66,9 +113,12 @@ export interface Content {
   rangeLabel: string
 
   /**
-   * Not from the API: set by `lib/translation/translate.ts` to the language
-   * the piece's own words ended up in. "en" under a Tamil page means the
-   * translation failed and the piece is shown as the clinic wrote it.
+   * Which language the piece's own words are actually in ("ta", "en").
+   *
+   * <p>From the API, which serves a translation only where the clinic has
+   * approved one and it still matches the English it was made from. "en" under
+   * a Tamil page therefore means "not translated yet" — a steady state, not a
+   * failure, since nothing is translated at read time any more.
    */
   language?: string
 }
@@ -100,6 +150,12 @@ export interface FeedQuery {
   week?: number
   type?: ContentType
   category?: ContentCategory
+  /**
+   * The language to read in, e.g. "ta". A piece with no approved, current
+   * translation comes back in English whatever this says, and `language` on
+   * each piece reports which it actually was.
+   */
+  lang?: string
 }
 
 /**

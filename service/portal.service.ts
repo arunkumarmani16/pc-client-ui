@@ -46,6 +46,7 @@ export async function getFeed(
     ...config,
     params: {
       ...(query.week !== undefined ? { week: query.week } : {}),
+      ...(query.lang ? { lang: query.lang } : {}),
       ...(query.type ? { type: query.type } : {}),
       ...(query.category ? { category: query.category } : {}),
     },
@@ -71,6 +72,7 @@ export async function getFeed(
  */
 export async function getMonthFeed(
   month?: number,
+  language?: string,
   config?: AxiosRequestConfig
 ): Promise<MonthFeed> {
   // The first request doubles as the lookup for which month she is in: asked
@@ -78,7 +80,7 @@ export async function getMonthFeed(
   // the remaining weeks are read from. Resolving the month any other way would
   // cost a round trip that this one already pays for.
   const opening = await getFeed(
-    month === undefined ? {} : { week: startWeekOf(month) },
+    month === undefined ? { lang: language } : { week: startWeekOf(month), lang: language },
     config
   )
 
@@ -95,7 +97,7 @@ export async function getMonthFeed(
   const rest = await Promise.all(
     weeks
       .filter((week) => !reuseOpening || week !== opening.week)
-      .map((week) => getFeed({ week }, config))
+      .map((week) => getFeed({ week, lang: language }, config))
   )
 
   const itemsById = new Map<string, Content>()
@@ -131,11 +133,12 @@ export async function getMonthFeed(
 /** One piece of guidance. A draft answers 404, the same as a missing one. */
 export async function getContent(
   contentId: string,
+  language?: string,
   config?: AxiosRequestConfig
 ): Promise<Content> {
   const { data } = await httpClient.get<Content>(
     `${RESOURCE}/content/${encodeURIComponent(contentId)}`,
-    config
+    { ...config, params: { ...config?.params, ...(language ? { lang: language } : {}) } }
   )
   return data
 }

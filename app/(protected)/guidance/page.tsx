@@ -18,10 +18,7 @@ import { PREGNANCY_MONTHS, clampMonth, isMonthOpen, weeksOf } from "@/lib/pregna
 import { requireAuthConfig } from "@/lib/auth/session"
 import { stringsFor, type Strings } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
-import {
-  localizeMonthFeed,
-  translateContents,
-} from "@/lib/translation/translate"
+import { localizeContents, localizeMonthFeed } from "@/lib/translation/localize"
 import { cn } from "@/lib/utils"
 import { getMonthFeed } from "@/service"
 
@@ -65,7 +62,7 @@ export default async function GuidancePage({
   // round trip per chip and still offer chips leading to empty pages.
   const requested = monthParam(params.month)
   const feed = localizeMonthFeed(
-    await getMonthFeed(requested, await requireAuthConfig()),
+    await getMonthFeed(requested, language, await requireAuthConfig()),
     language
   )
 
@@ -84,8 +81,9 @@ export default async function GuidancePage({
   const inCategory = category
     ? feed.items.filter((item) => item.category === category)
     : feed.items
-  // Translated after filtering, so a narrowed page only pays for what it shows.
-  const items = await translateContents(
+  // Only the app's own labels: the pieces arrive from the API already in
+  // whichever language the clinic has approved them in.
+  const items = localizeContents(
     week === undefined ? inCategory : inCategory.filter(covers(week)),
     language
   )
@@ -114,7 +112,12 @@ export default async function GuidancePage({
         ) : (
           <div className="stagger grid gap-3 sm:grid-cols-2">
             {items.map((content) => (
-              <ContentCard key={content.contentId} content={content} copy={words.content} />
+              <ContentCard
+                key={content.contentId}
+                content={content}
+                copy={words.content}
+                deckCopy={words.deck}
+              />
             ))}
           </div>
         )}
