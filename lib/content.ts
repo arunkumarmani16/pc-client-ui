@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 
 import type { ContentCategory, ContentType } from "@/interface"
+import type { Strings } from "@/lib/strings"
+import { fill } from "@/lib/utils"
 
 /**
  * An icon per kind of piece, drawn beside its `typeLabel` so "Video" or "Tip"
@@ -133,4 +135,22 @@ export function previewOf(html?: string | null, limit = 140): string | null {
   const cut = text.slice(0, limit)
   const lastSpace = cut.lastIndexOf(" ")
   return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`
+}
+
+/**
+ * "12 pages", or "1 page" for a single handout.
+ *
+ * <p>Here rather than in `SlideDeck` because the feed's cards say the same
+ * thing about the same document, and two wordings of it would eventually
+ * disagree — but also because `SlideDeck` is a client component, and a server
+ * component calling a function exported from one gets a client reference
+ * rather than the function.
+ *
+ * <p>The plural is a choice between two whole strings rather than an "s"
+ * appended to one: Tamil's plural is not a suffix on the English word, and a
+ * rule written around English grammar would be wrong in the language this app
+ * exists to serve.
+ */
+export function pageCountOf(copy: Strings["deck"], total: number): string {
+  return total === 1 ? copy.onePage : fill(copy.pages, { count: total })
 }

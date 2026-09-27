@@ -183,8 +183,17 @@ function MonthRail({
             // Spelled out for a screen reader, which has neither the weeks under
             // the number nor the colour marking which month this is.
             aria-label={entry.ariaLabel}
-            className={cn(shape, entry.active ? tone.active : tone.idle)}
+            className={cn(shape, "relative", entry.active ? tone.active : tone.idle)}
           >
+            {entry.status === "current" && (
+              // Hers, regardless of which month she happens to be browsing —
+              // a dot rather than relying on the tint alone, which a colour
+              // strip cannot promise reads as "today" on every screen.
+              <span
+                aria-hidden
+                className="absolute top-1 right-1 size-1.5 rounded-full bg-primary"
+              />
+            )}
             <span className="text-[0.5625rem] font-medium tracking-wide uppercase opacity-70">
               {entry.monthLabel}
             </span>

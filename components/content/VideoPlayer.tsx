@@ -1,9 +1,11 @@
-import { ClockIcon, VideoOffIcon } from "lucide-react"
+import { ClockIcon, ExternalLinkIcon, VideoOffIcon } from "lucide-react"
 
 import type { ContentVideo } from "@/interface"
 import { mediaUrl } from "@/lib/api/config"
 import { formatDuration } from "@/lib/format"
-import { strings } from "@/lib/strings"
+import type { Strings } from "@/lib/strings"
+import { cn } from "@/lib/utils"
+import { embedFor } from "@/lib/video"
 
 /**
  * One clip.
@@ -18,11 +20,16 @@ import { strings } from "@/lib/strings"
  * nobody pressed play on. Metadata is enough for the duration and the first
  * frame.
  */
-export function VideoPlayer({ video }: { video: ContentVideo }) {
-  const copy = strings.video
+export function VideoPlayer({
+  video,
+  copy,
+}: {
+  video: ContentVideo
+  copy: Strings["video"]
+}) {
   const source = mediaUrl(video.playbackUrl)
   const hls = mediaUrl(video.hlsUrl)
-  const embed = mediaUrl(video.embedUrl)
+  const embed = embedFor(mediaUrl(video.embedUrl))
   const poster = mediaUrl(video.posterUrl) ?? undefined
   const duration = formatDuration(video.durationSeconds)
 
@@ -40,13 +47,38 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
     )
   }
 
-  if (!source && embed) {
+  // A link with no embed route behind it — Instagram's newer `/share/<id>`,
+  // which only Instagram can resolve. A frame pointed at it lands on the post
+  // page and its `DENY`, so she is handed the link rather than a blank box.
+  if (!source && embed?.kind === "link") {
     return (
       <Frame>
+        <div className="flex flex-col items-center gap-3 px-4 text-center">
+          <ExternalLinkIcon className="size-6 text-muted-foreground" aria-hidden />
+          <p className="text-sm text-muted-foreground">{copy.opensElsewhere}</p>
+          <a
+            href={embed.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md text-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            {copy.watchThere}
+          </a>
+        </div>
+      </Frame>
+    )
+  }
+
+  if (!source && embed?.kind === "frame") {
+    return (
+      <Frame portrait={embed.portrait}>
         <iframe
-          src={embed}
+          src={embed.url}
           title={video.title ?? copy.fallbackTitle}
-          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          // `autoplay` and `web-share` beyond what a bare file needs: a
+          // provider's own player is the thing being handed the controls here,
+          // and one refused permission shows as a player that will not start.
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
           allowFullScreen
           loading="lazy"
           className="absolute inset-0 size-full border-0"
@@ -99,15 +131,25 @@ export function VideoPlayer({ video }: { video: ContentVideo }) {
 }
 
 /**
- * A 16:9 box that never outgrows its column.
+ * A box that never outgrows its column.
  *
  * <p>`aspect-video` with `max-w-full` rather than a fixed height: the shell is
  * a phone-first column, and a player given its own dimensions is the usual way
  * a page ends up scrolling sideways.
+ *
+ * <p>`portrait` for a provider whose card is taller than it is wide — an
+ * Instagram reel, where 16:9 would crop away the very controls she is meant to
+ * press. Capped in width as well, so the tall box does not take a whole laptop
+ * screen to say what a phone says in a column.
  */
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({ portrait = false, children }: { portrait?: boolean; children: React.ReactNode }) {
   return (
-    <div className="relative flex aspect-video w-full max-w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
+    <div
+      className={cn(
+        "relative flex w-full max-w-full items-center justify-center overflow-hidden rounded-xl border bg-muted",
+        portrait ? "mx-auto aspect-[9/16] max-w-sm" : "aspect-video"
+      )}
+    >
       {children}
     </div>
   )

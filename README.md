@@ -16,6 +16,15 @@ Configuration lives in `.env`:
 | -------------- | --------------------------- | -------------------------------------------------------- |
 | `API_BASE_URL` | `http://localhost:8080/api` | Server-only. Include the API's `/api` context path.      |
 
+
+## Tamil
+
+A language button in the header switches between English and தமிழ் and remembers the choice in the `portal_language` cookie (`app/api/language`).
+
+- **The app's own words** (menus, headings, topic names) are translated by hand in `lib/strings.ts`.
+- **Guidance** is translated on the API, not here. When staff save a piece they can draft a Tamil version with [AI4Bharat IndicTrans2](https://github.com/AI4Bharat/IndicTrans2) through Bhashini, and a clinician reviews and approves it before any mother sees it. This app just asks for `?lang=ta` and reads what comes back; a piece with no approved translation arrives in English, and `content.language` says which it was. Nothing is translated at render time, so no page waits on a model and no unreviewed text reaches a patient.
+- **A document's pages are not translated**, and cannot be: they are pictures by the time they reach this app, so the words in them are whatever the clinic wrote. Only the deck's own furniture — "Handout", "3 of 12", the button labels — is in `lib/strings.ts` with the rest of the app's words.
+
 ## How it talks to the API
 
 This app talks only to the API's **`/portal/**`** routes, which exist for it. The staff console's routes (`/patients`, `/content`, ...) are `ROLE_STAFF` and answer this app's tokens with a refusal.
@@ -31,9 +40,10 @@ The endpoints this app uses:
 | ----------------------------------------------- | ------------------------------------------------------------- |
 | `POST /portal/login`                            | Sign in. The only one that works without a token.             |
 | `GET /portal/me`                                | The signed-in mother's own record.                             |
-| `GET /portal/content?week=&type=&category=`     | A week of published guidance. Defaults to the week she is in. |
-| `GET /portal/content/{id}`                      | One published piece.                                           |
+| `GET /portal/content?week=&type=&category=&lang=` | A week of published guidance. Defaults to the week she is in. `lang` picks the language; an unknown one reads as English. |
+| `GET /portal/content/{id}?lang=`               | One published piece.                                           |
 | `GET /portal/content/{id}/videos/{vid}/stream`  | A video held on the API's own disk.                            |
+| `GET /portal/content/{id}/documents/{did}/pages/{n}` | One page of a document, as an image. Only for pages on the API's own disk. |
 
 None of them takes a patient id: the API resolves the caller from the token, so there is no id for one mother to swap for another's.
 
@@ -51,7 +61,7 @@ app/                  routes: (auth)/login,
                       api/auth/{login,logout}
 components/ui/        shadcn primitives (add more with `npx shadcn add <name>`)
 components/global/    app-wide pieces: header, nav, account menu, loading overlay, page header
-components/content/   the guidance feed: card, video player, do/avoid lists
+components/content/   the guidance feed: card, video player, slide deck
 interface/            API request and response types
 service/              axios client, plus one module per API resource
 lib/                  API config, auth contract and session, loading store, formatting,

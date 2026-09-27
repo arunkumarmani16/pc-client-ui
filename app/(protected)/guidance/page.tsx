@@ -16,12 +16,14 @@ import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle } from "@/lib/content"
 import { PREGNANCY_MONTHS, clampMonth, isMonthOpen, weeksOf } from "@/lib/pregnancy"
 import { requireAuthConfig } from "@/lib/auth/session"
-import { strings } from "@/lib/strings"
+import { stringsFor, type Strings } from "@/lib/strings"
+import { currentLanguage } from "@/lib/translation/current"
+import { localizeContents, localizeMonthFeed } from "@/lib/translation/localize"
 import { cn } from "@/lib/utils"
 import { getMonthFeed } from "@/service"
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: strings.guidance.title }
+  return { title: stringsFor(await currentLanguage()).guidance.title }
 }
 
 type Search = {
@@ -50,14 +52,19 @@ export default async function GuidancePage({
 }) {
   const params = await searchParams
   const category = categoryParam(params.category)
-  const copy = strings.guidance
+  const language = await currentLanguage()
+  const words = stringsFor(language)
+  const copy = words.guidance
 
   // Fetched unfiltered even when something is chosen: a month holds a handful
   // of pieces, and one read gives the list, the weeks that have anything in
   // them, and the topics that do. Filtering server-side instead would cost a
   // round trip per chip and still offer chips leading to empty pages.
   const requested = monthParam(params.month)
-  const feed = await getMonthFeed(requested, await requireAuthConfig())
+  const feed = localizeMonthFeed(
+    await getMonthFeed(requested, language, await requireAuthConfig()),
+    language
+  )
 
   // `getMonthFeed` serves her own month in place of a locked one. The URL is put
   // right as well, so the address bar never names a month the page is not showing.
@@ -74,7 +81,12 @@ export default async function GuidancePage({
   const inCategory = category
     ? feed.items.filter((item) => item.category === category)
     : feed.items
-  const items = week === undefined ? inCategory : inCategory.filter(covers(week))
+  // Only the app's own labels: the pieces arrive from the API already in
+  // whichever language the clinic has approved them in.
+  const items = localizeContents(
+    week === undefined ? inCategory : inCategory.filter(covers(week)),
+    language
+  )
 
   return (
     <>
@@ -84,7 +96,7 @@ export default async function GuidancePage({
       />
 
       <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-6">
-        <MonthNav feed={feed} week={week} category={category} />
+        <MonthNav feed={feed} week={week} category={category} words={words} />
         <CategoryFilter
           all={inWeek}
           month={feed.month}
@@ -95,12 +107,17 @@ export default async function GuidancePage({
 
         {items.length === 0 ? (
           <p className="rounded-xl border border-dashed bg-card px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
-            {emptyMessage(feed, week, category)}
+            {emptyMessage(feed, week, category, words)}
           </p>
         ) : (
           <div className="stagger grid gap-3 sm:grid-cols-2">
             {items.map((content) => (
-              <ContentCard key={content.contentId} content={content} />
+              <ContentCard
+                key={content.contentId}
+                content={content}
+                copy={words.content}
+                deckCopy={words.deck}
+              />
             ))}
           </div>
         )}
@@ -122,16 +139,18 @@ function MonthNav({
   feed,
   week,
   category,
+  words,
 }: {
   feed: MonthFeed
   week?: number
   category?: ContentCategory
+  words: Strings
 }) {
   // Bounded by the open months rather than the calendar, so an arrow never
   // steps into a locked month.
   const previous = feed.month > feed.firstOpenMonth ? feed.month - 1 : null
   const next = feed.month < feed.lastOpenMonth ? feed.month + 1 : null
-  const copy = strings.guidance
+  const copy = words.guidance
 
   return (
     <nav aria-label={copy.pregnancyMonth} className="space-y-2 rounded-xl border bg-card p-2">
@@ -170,8 +189,8 @@ function MonthNav({
       </div>
 
       <MonthCarousel
-        months={monthCards(feed, category)}
-        weeks={weekChips(feed, week, category)}
+        months={monthCards(feed, category, words)}
+        weeks={weekChips(feed, week, category, words)}
       />
     </nav>
   )
@@ -187,9 +206,10 @@ function MonthNav({
  */
 function monthCards(
   feed: MonthFeed,
-  category: ContentCategory | undefined
+  category: ContentCategory | undefined,
+  words: Strings
 ): CarouselMonth[] {
-  const copy = strings.guidance
+  const copy = words.guidance
   const suffix: Record<MonthStatus, string> = {
     finished: copy.lockedSuffix,
     previous: ` — ${copy.previousMonth}`,
@@ -238,9 +258,10 @@ function statusOf(month: number, thisMonth: number): MonthStatus {
 function weekChips(
   feed: MonthFeed,
   selected: number | undefined,
-  category: ContentCategory | undefined
+  category: ContentCategory | undefined,
+  words: Strings
 ): CarouselWeek[] {
-  const copy = strings.guidance
+  const copy = words.guidance
   const inCategory = category
     ? feed.items.filter((item) => item.category === category)
     : feed.items
@@ -407,9 +428,10 @@ function covers(week: number) {
 function emptyMessage(
   feed: MonthFeed,
   week: number | undefined,
-  category: ContentCategory | undefined
+  category: ContentCategory | undefined,
+  words: Strings
 ): string {
-  const copy = strings.guidance
+  const copy = words.guidance
 
   if (feed.items.length === 0) {
     return copy.nothingForMonth(feed.month)
