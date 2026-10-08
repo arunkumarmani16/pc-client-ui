@@ -5,6 +5,7 @@ export type {
   Content,
   ContentCategory,
   ContentDocument,
+  ContentStage,
   ContentType,
   ContentVideo,
   DocumentKind,
@@ -13,3 +14,9 @@ export type {
   FeedQuery,
   MonthFeed,
 } from "./content.interface"
+export type {
+  AppNotification,
+  NotificationInbox,
+  NotificationKind,
+  PushSettings,
+} from "./notification.interface"

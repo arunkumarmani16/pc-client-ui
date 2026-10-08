@@ -11,10 +11,18 @@ import {
   type MonthStatus,
 } from "@/components/content/MonthCarousel"
 import { PageHeader } from "@/components/global/PageHeader"
-import type { Content, ContentCategory, MonthFeed } from "@/interface"
+import type { Content, ContentCategory, ContentStage, MonthFeed } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle } from "@/lib/content"
-import { PREGNANCY_MONTHS, clampMonth, isMonthOpen, weeksOf } from "@/lib/pregnancy"
+import {
+  POST_DELIVERY_MONTHS,
+  PREGNANCY_MONTHS,
+  clampMonth,
+  isMonthOpen,
+  timelineIndex,
+  weeksOf,
+  type MonthRef,
+} from "@/lib/pregnancy"
 import { requireAuthConfig } from "@/lib/auth/session"
 import { stringsFor, type Strings } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
@@ -27,6 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 type Search = {
+  /** `POST_DELIVERY` for the months after the birth; absent for the pregnancy. */
+  stage?: string | string[]
   month?: string | string[]
   week?: string | string[]
   category?: string | string[]
@@ -44,6 +54,11 @@ type Search = {
  * <p>Three months can be opened: the one she is in, the one before and the one
  * after. The rest are shown locked. The window comes from `isMonthOpen` in
  * `lib/pregnancy.ts` rather than being written out here.
+ *
+ * <p>The ten months of the pregnancy run straight on into the one month after
+ * the birth — the last she will read, since her login ends a month after the
+ * due date — so the window crosses the delivery like any other month
+ * boundary: in month 10, the month after the birth is the next one along.
  */
 export default async function GuidancePage({
   searchParams,
@@ -60,7 +75,11 @@ export default async function GuidancePage({
   // of pieces, and one read gives the list, the weeks that have anything in
   // them, and the topics that do. Filtering server-side instead would cost a
   // round trip per chip and still offer chips leading to empty pages.
-  const requested = monthParam(params.month)
+  const requestedMonth = monthParam(params.month)
+  const requested: MonthRef | undefined =
+    requestedMonth === undefined
+      ? undefined
+      : { stage: stageParam(params.stage), month: requestedMonth }
   const feed = localizeMonthFeed(
     await getMonthFeed(requested, language, await requireAuthConfig()),
     language
@@ -68,11 +87,15 @@ export default async function GuidancePage({
 
   // `getMonthFeed` serves her own month in place of a locked one. The URL is put
   // right as well, so the address bar never names a month the page is not showing.
-  if (requested !== undefined && clampMonth(requested) !== feed.month) {
+  if (
+    requested !== undefined &&
+    (requested.stage !== feed.stage || clampMonth(requested.month, requested.stage) !== feed.month)
+  ) {
     redirect(hrefFor(undefined, undefined, category))
   }
 
-  const week = weekParam(params.week, feed.month)
+  const shown: MonthRef = { stage: feed.stage, month: feed.month }
+  const week = weekParam(params.week, shown)
 
   // Each filter is counted against the other one's result, so a week chip
   // never promises pieces that the chosen topic has already ruled out, and a
@@ -91,7 +114,7 @@ export default async function GuidancePage({
   return (
     <>
       <PageHeader
-        title={feed.currentMonth ? copy.thisMonth : copy.month(feed.month)}
+        title={feed.currentMonth ? copy.thisMonth : monthName(shown, words)}
         description={`${feed.trimesterLabel} · ${feed.weeksLabel}`}
       />
 
@@ -99,7 +122,7 @@ export default async function GuidancePage({
         <MonthNav feed={feed} week={week} category={category} words={words} />
         <CategoryFilter
           all={inWeek}
-          month={feed.month}
+          month={shown}
           week={week}
           selected={category}
           allLabel={copy.allTopics}
@@ -147,10 +170,12 @@ function MonthNav({
   words: Strings
 }) {
   // Bounded by the open months rather than the calendar, so an arrow never
-  // steps into a locked month.
-  const previous = feed.month > feed.firstOpenMonth ? feed.month - 1 : null
-  const next = feed.month < feed.lastOpenMonth ? feed.month + 1 : null
+  // steps into a locked month. Worked out by `getMonthFeed`, which is where
+  // the step across the birth from month 10 is known about.
+  const { previous, next } = feed
   const copy = words.guidance
+  const afterBirth = feed.stage === "POST_DELIVERY"
+  const hereAfterBirth = feed.thisStage === "POST_DELIVERY"
 
   return (
     <nav aria-label={copy.pregnancyMonth} className="space-y-2 rounded-xl border bg-card p-2">
@@ -164,18 +189,28 @@ function MonthNav({
 
         <div className="min-w-0 text-center">
           <p className="text-sm font-semibold tracking-tight text-foreground tabular-nums">
-            {week === undefined ? copy.month(feed.month) : copy.monthAndWeek(feed.month, week)}
+            {week === undefined
+              ? monthName({ stage: feed.stage, month: feed.month }, words)
+              : afterBirth
+                ? copy.afterBirthAndWeek(week)
+                : copy.monthAndWeek(feed.month, week)}
           </p>
           {feed.currentMonth ? (
             // The one line still spoken in weeks: the month is what she reads,
             // but the week is how her clinic and her own notes describe her.
-            <p className="text-xs text-primary">{copy.youAreHere(feed.thisWeek)}</p>
+            <p className="text-xs text-primary">
+              {hereAfterBirth
+                ? copy.youAreHereAfterBirth(feed.thisWeek)
+                : copy.youAreHere(feed.thisWeek)}
+            </p>
           ) : (
             <Link
               href={hrefFor(undefined, undefined, category)}
               className="rounded text-xs text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              {copy.backToMonth(feed.thisMonth)}
+              {hereAfterBirth
+                ? copy.backToAfterBirth
+                : copy.backToMonth(feed.thisMonth)}
             </Link>
           )}
         </div>
@@ -197,8 +232,9 @@ function MonthNav({
 }
 
 /**
- * The ten month cards: hers, the one before and the one after open, each in
- * its own colour, and the rest locked.
+ * The month cards — the ten of the pregnancy, then one "After birth" card for
+ * the month after the delivery: hers, the one before and the one after open,
+ * each in its own colour, and the rest locked.
  *
  * <p>A month always opens whole: the week is dropped from the link because
  * week 18 means nothing once month 7 is the one being read, and carrying it
@@ -217,34 +253,46 @@ function monthCards(
     next: ` — ${copy.nextMonth}`,
     locked: copy.lockedSuffix,
   }
+  const here: MonthRef = { stage: feed.thisStage, month: feed.thisMonth }
 
-  return PREGNANCY_MONTHS.map((entry) => {
+  return [...PREGNANCY_MONTHS, ...POST_DELIVERY_MONTHS].map((entry) => {
     const weeksLabel = `${entry.startWeek}–${entry.endWeek}`
-    const status = statusOf(entry.month, feed.thisMonth)
+    const status = statusOf(entry, here)
+    const afterBirth = entry.stage === "POST_DELIVERY"
 
     return {
+      id: `${entry.stage}-${entry.month}`,
       month: entry.month,
-      monthLabel: copy.monthLabel,
+      afterBirth,
+      monthLabel: afterBirth ? copy.afterBirth : copy.monthLabel,
       weeksLabel,
       // Built here rather than in the carousel: the strip is a client
       // component, and shipping it a dictionary to assemble one sentence from
       // would send every string in the app to the browser to save five words.
-      ariaLabel: copy.monthAria(entry.month, weeksLabel) + suffix[status],
-      href: status === "locked" ? undefined : hrefFor(entry.month, undefined, category),
-      active: entry.month === feed.month,
+      ariaLabel:
+        (afterBirth
+          ? copy.monthAfterBirthAria(weeksLabel)
+          : copy.monthAria(entry.month, weeksLabel)) + suffix[status],
+      href:
+        status === "locked" || status === "finished"
+          ? undefined
+          : hrefFor(entry, undefined, category),
+      active: entry.stage === feed.stage && entry.month === feed.month,
       status,
     }
   })
 }
 
 /**
- * Where a month stands against hers. Anything beyond the one either side is
+ * Where a month stands against hers, measured along the whole line so the
+ * birth is just another month boundary. Anything beyond the one either side is
  * shut: `finished` when it is already behind her, `locked` when still ahead.
  */
-function statusOf(month: number, thisMonth: number): MonthStatus {
-  if (month === thisMonth) return "current"
-  if (!isMonthOpen(month, thisMonth)) return month < thisMonth ? "finished" : "locked"
-  return month < thisMonth ? "previous" : "next"
+function statusOf(month: MonthRef, here: MonthRef): MonthStatus {
+  const distance = timelineIndex(month) - timelineIndex(here)
+  if (distance === 0) return "current"
+  if (!isMonthOpen(month, here)) return distance < 0 ? "finished" : "locked"
+  return distance < 0 ? "previous" : "next"
 }
 
 /**
@@ -266,30 +314,35 @@ function weekChips(
     ? feed.items.filter((item) => item.category === category)
     : feed.items
 
+  const shown: MonthRef = { stage: feed.stage, month: feed.month }
+  // Her week only marks a chip on her own side of the birth: week 6 after it
+  // is not week 6 of the pregnancy.
+  const herWeek = feed.stage === feed.thisStage ? feed.thisWeek : undefined
+
   const chips: CarouselWeek[] = [
     {
       label: copy.allWeeks,
       ariaLabel: copy.allWeeksAria(inCategory.length),
-      href: hrefFor(feed.month, undefined, category),
+      href: hrefFor(shown, undefined, category),
       active: selected === undefined,
       current: false,
       count: inCategory.length,
     },
   ]
 
-  for (const week of weeksOf(feed.month)) {
+  for (const week of weeksOf(feed.month, feed.stage)) {
     const overdueWeek = week > feed.endWeek
-    if (overdueWeek && week !== feed.thisWeek && !feed.items.some(covers(week))) continue
+    if (overdueWeek && week !== herWeek && !feed.items.some(covers(week))) continue
 
     const count = inCategory.filter(covers(week)).length
 
     chips.push({
       week,
       label: copy.week(week),
-      ariaLabel: copy.weekAria(week, count) + (week === feed.thisWeek ? copy.weekYouAreIn : ""),
-      href: hrefFor(feed.month, week, category),
+      ariaLabel: copy.weekAria(week, count) + (week === herWeek ? copy.weekYouAreIn : ""),
+      href: hrefFor(shown, week, category),
       active: week === selected,
-      current: week === feed.thisWeek,
+      current: week === herWeek,
       count,
     })
   }
@@ -348,7 +401,7 @@ function CategoryFilter({
   allLabel,
 }: {
   all: Content[]
-  month: number
+  month: MonthRef
   week?: number
   selected?: ContentCategory
   /** "All"; every other chip is worded by the API. */
@@ -419,7 +472,7 @@ function Chip({
   )
 }
 
-/** Whether a piece covers a given gestational week. */
+/** Whether a piece covers a given week of the stage being read. */
 function covers(week: number) {
   return (item: Content) => item.startWeek <= week && item.endWeek >= week
 }
@@ -434,7 +487,9 @@ function emptyMessage(
   const copy = words.guidance
 
   if (feed.items.length === 0) {
-    return copy.nothingForMonth(feed.month)
+    return feed.stage === "POST_DELIVERY"
+      ? copy.nothingAfterBirth
+      : copy.nothingForMonth(feed.month)
   }
   if (week !== undefined) {
     return category ? copy.nothingInTopicForWeek(week) : copy.nothingForWeek(week)
@@ -442,14 +497,28 @@ function emptyMessage(
   return copy.nothingInTopicThisMonth
 }
 
-/** A link back to this page, keeping whichever of the three filters still applies. */
+/** "Month 5", or "First month after birth". */
+function monthName({ stage, month }: MonthRef, words: Strings): string {
+  return stage === "POST_DELIVERY"
+    ? words.guidance.monthAfterBirth
+    : words.guidance.month(month)
+}
+
+/**
+ * A link back to this page, keeping whichever of the three filters still
+ * applies. A pregnancy month carries no `stage`, so the links that existed
+ * before there were months after the birth still read the same.
+ */
 function hrefFor(
-  month: number | undefined,
+  month: MonthRef | undefined,
   week: number | undefined,
   category: ContentCategory | undefined
 ): string {
   const query = new URLSearchParams()
-  if (month !== undefined) query.set("month", String(month))
+  if (month !== undefined) {
+    if (month.stage === "POST_DELIVERY") query.set("stage", month.stage)
+    query.set("month", String(month.month))
+  }
   if (week !== undefined) query.set("week", String(week))
   if (category) query.set("category", category)
 
@@ -474,12 +543,18 @@ function monthParam(value: string | string[] | undefined): number | undefined {
  * carrying week 18 into month 7 would otherwise filter everything away and
  * leave a page that looks broken rather than empty.
  */
-function weekParam(value: string | string[] | undefined, month: number): number | undefined {
+function weekParam(value: string | string[] | undefined, month: MonthRef): number | undefined {
   const raw = Array.isArray(value) ? value[0] : value
   if (!raw) return undefined
 
   const week = Number.parseInt(raw, 10)
-  return weeksOf(month).includes(week) ? week : undefined
+  return weeksOf(month.month, month.stage).includes(week) ? week : undefined
+}
+
+/** Anything but the months after the birth reads as the pregnancy. */
+function stageParam(value: string | string[] | undefined): ContentStage {
+  const raw = Array.isArray(value) ? value[0] : value
+  return raw === "POST_DELIVERY" ? "POST_DELIVERY" : "PREGNANCY"
 }
 
 const CATEGORIES: ContentCategory[] = [

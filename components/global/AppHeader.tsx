@@ -6,9 +6,11 @@ import { HeartPulse } from "lucide-react"
 import { AccountMenu, type AccountLabels } from "@/components/global/AccountMenu"
 import { AppNavLinks, type NavLabels } from "@/components/global/AppNav"
 import { LanguageSwitcher } from "@/components/global/LanguageSwitcher"
+import { NotificationBell } from "@/components/global/NotificationBell"
 import { Badge } from "@/components/ui/badge"
 import type { Patient } from "@/interface"
 import { HOME_PATH } from "@/lib/auth/cookies"
+import type { Strings } from "@/lib/strings"
 import type { Language } from "@/lib/translation/languages"
 
 /**
@@ -28,6 +30,7 @@ export function AppHeader({
   language,
   languageLabel,
   weekLabel,
+  notificationLabels,
 }: {
   patient: Patient
   navLabels: NavLabels
@@ -37,6 +40,8 @@ export function AppHeader({
   languageLabel: string
   /** "Week 24", already worded and numbered by the shell. */
   weekLabel: string
+  /** The bell and its panel, in the language she is reading in. */
+  notificationLabels: Strings["notifications"]
 }) {
   return (
     <header className="relative flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-primary/50 after:via-blush/30 after:to-transparent sm:px-6">
@@ -69,6 +74,7 @@ export function AppHeader({
         <Badge variant="secondary" className="tabular-nums">
           {weekLabel}
         </Badge>
+        <NotificationBell labels={notificationLabels} language={language} />
         <AccountMenu patient={patient} labels={accountLabels} />
       </div>
     </header>

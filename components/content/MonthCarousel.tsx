@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { LockIcon } from "lucide-react"
+import { BabyIcon, LockIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -22,8 +22,15 @@ export type MonthStatus = "finished" | "previous" | "current" | "next" | "locked
  * to be shipped the whole string table to do it.
  */
 export interface CarouselMonth {
+  /** Unique across the whole strip: month 1 comes twice, once either side of the birth. */
+  id: string
   month: number
-  /** "Month". */
+  /**
+   * The one month after the delivery. Drawn with a baby in place of its
+   * number, since "1" after a "10" would read as the pregnancy starting over.
+   */
+  afterBirth?: boolean
+  /** "Month", or "After birth" on the after-birth card. */
   monthLabel: string
   /** e.g. "17–20", the weeks the month covers. */
   weeksLabel: string
@@ -101,7 +108,7 @@ export function MonthCarousel({
   months: CarouselMonth[]
   weeks: CarouselWeek[]
 }) {
-  const activeMonth = months.find((entry) => entry.active)?.month
+  const activeMonth = months.find((entry) => entry.active)?.id
 
   return (
     <div className="space-y-2">
@@ -116,7 +123,7 @@ function MonthRail({
   activeMonth,
 }: {
   months: CarouselMonth[]
-  activeMonth?: number
+  activeMonth?: string
 }) {
   const rail = React.useRef<HTMLDivElement>(null)
   const selected = React.useRef<HTMLAnchorElement>(null)
@@ -149,61 +156,72 @@ function MonthRail({
       // not against whatever happens to be positioned further up the page.
       className="no-scrollbar relative flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-smooth"
     >
-      {months.map((entry) => {
-        if (entry.status === "finished" || entry.status === "locked" || !entry.href) {
-          // Not a link, so there is nothing to tab to or tap that goes nowhere.
-          // Still drawn, so she can see how far the months run.
-          return (
-            <span
-              key={entry.month}
-              role="link"
-              aria-disabled="true"
-              aria-label={entry.ariaLabel}
-              className={cn(
-                shape,
-                "cursor-not-allowed border-dashed",
-                SHUT_TONES[entry.status === "finished" ? "finished" : "locked"]
-              )}
-            >
-              <LockIcon className="size-[0.5625rem]" aria-hidden />
-              <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
-              <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
-            </span>
-          )
-        }
-
-        const tone = MONTH_TONES[entry.status]
-
-        return (
-          <Link
-            key={entry.month}
-            ref={entry.active ? selected : undefined}
-            href={entry.href}
-            aria-current={entry.active ? "page" : undefined}
-            // Spelled out for a screen reader, which has neither the weeks under
-            // the number nor the colour marking which month this is.
-            aria-label={entry.ariaLabel}
-            className={cn(shape, "relative", entry.active ? tone.active : tone.idle)}
-          >
-            {entry.status === "current" && (
-              // Hers, regardless of which month she happens to be browsing —
-              // a dot rather than relying on the tint alone, which a colour
-              // strip cannot promise reads as "today" on every screen.
-              <span
-                aria-hidden
-                className="absolute top-1 right-1 size-1.5 rounded-full bg-primary"
-              />
-            )}
-            <span className="text-[0.5625rem] font-medium tracking-wide uppercase opacity-70">
-              {entry.monthLabel}
-            </span>
-            <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
-            <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
-          </Link>
-        )
-      })}
+      {months.map((entry) => monthCard(entry))}
     </div>
   )
+
+  function monthCard(entry: CarouselMonth) {
+    // Wider, and with a label allowed to wrap: "After birth" — and its Tamil,
+    // which is longer still — does not fit the width a number does.
+    const cardShape = cn(shape, entry.afterBirth && "w-[5.5rem] px-1 text-center")
+    const glyph = entry.afterBirth ? (
+      <BabyIcon className="size-[1.125rem]" aria-hidden />
+    ) : (
+      <span className="text-lg font-semibold tabular-nums">{entry.month}</span>
+    )
+
+    if (entry.status === "finished" || entry.status === "locked" || !entry.href) {
+      // Not a link, so there is nothing to tab to or tap that goes nowhere.
+      // Still drawn, so she can see how far the months run.
+      return (
+        <span
+          key={entry.id}
+          role="link"
+          aria-disabled="true"
+          aria-label={entry.ariaLabel}
+          className={cn(
+            cardShape,
+            "cursor-not-allowed border-dashed",
+            SHUT_TONES[entry.status === "finished" ? "finished" : "locked"]
+          )}
+        >
+          <LockIcon className="size-[0.5625rem]" aria-hidden />
+          {glyph}
+          <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
+        </span>
+      )
+    }
+
+    const tone = MONTH_TONES[entry.status]
+
+    return (
+      <Link
+        key={entry.id}
+        ref={entry.active ? selected : undefined}
+        href={entry.href}
+        aria-current={entry.active ? "page" : undefined}
+        // Spelled out for a screen reader, which has neither the weeks under
+        // the number nor the colour marking which month this is.
+        aria-label={entry.ariaLabel}
+        className={cn(cardShape, "relative", entry.active ? tone.active : tone.idle)}
+      >
+        {entry.status === "current" && (
+          // Hers, regardless of which month she happens to be browsing —
+          // a dot rather than relying on the tint alone, which a colour
+          // strip cannot promise reads as "today" on every screen.
+          <span
+            aria-hidden
+            className="absolute top-1 right-1 size-1.5 rounded-full bg-primary"
+          />
+        )}
+        <span className="text-[0.5625rem] font-medium tracking-wide uppercase opacity-70">
+          {entry.monthLabel}
+        </span>
+        {glyph}
+        <span className="text-[0.625rem] tabular-nums opacity-70">{entry.weeksLabel}</span>
+      </Link>
+    )
+  }
 }
 
 /**

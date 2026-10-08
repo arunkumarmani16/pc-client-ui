@@ -4,17 +4,16 @@ import { httpClient } from "./http-client"
 
 import type { Content, Feed, FeedQuery, MonthFeed, Patient } from "@/interface"
 import {
-  MAX_MONTH,
-  MIN_MONTH,
   clampMonth,
   endWeekOf,
   isMonthOpen,
   monthOf,
-  openMonthsAround,
   startWeekOf,
+  stepMonth,
   trimesterLabelOf,
   weeksLabelOf,
   weeksOf,
+  type MonthRef,
 } from "@/lib/pregnancy"
 
 const RESOURCE = "/portal"
@@ -45,6 +44,7 @@ export async function getFeed(
   const { data } = await httpClient.get<Feed>(`${RESOURCE}/content`, {
     ...config,
     params: {
+      ...(query.stage ? { stage: query.stage } : {}),
       ...(query.week !== undefined ? { week: query.week } : {}),
       ...(query.lang ? { lang: query.lang } : {}),
       ...(query.type ? { type: query.type } : {}),
@@ -69,35 +69,45 @@ export async function getFeed(
  * <p>Keyed by `contentId` on the way in: a piece written for the whole month
  * comes back in all four weeks, and a month that listed it four times would
  * read as four different pieces.
+ *
+ * <p>`month` is a month of a stage, so the months after the birth are read the
+ * same way — weeks counted from the birth, asked for with `stage`.
  */
 export async function getMonthFeed(
-  month?: number,
+  month?: MonthRef,
   language?: string,
   config?: AxiosRequestConfig
 ): Promise<MonthFeed> {
   // The first request doubles as the lookup for which month she is in: asked
-  // without a week it answers for today, and its `thisWeek` decides the month
-  // the remaining weeks are read from. Resolving the month any other way would
-  // cost a round trip that this one already pays for.
+  // without a week it answers for today, and its `thisStage`/`thisWeek` decide
+  // the month the remaining weeks are read from. Resolving the month any other
+  // way would cost a round trip that this one already pays for.
   const opening = await getFeed(
-    month === undefined ? { lang: language } : { week: startWeekOf(month), lang: language },
+    month === undefined
+      ? { lang: language }
+      : { stage: month.stage, week: startWeekOf(month.month, month.stage), lang: language },
     config
   )
 
-  const thisMonth = monthOf(opening.thisWeek)
-  const requested = month === undefined ? thisMonth : clampMonth(month)
+  const here: MonthRef = {
+    stage: opening.thisStage,
+    month: monthOf(opening.thisWeek, opening.thisStage),
+  }
+  const requested: MonthRef =
+    month === undefined ? here : { stage: month.stage, month: clampMonth(month.month, month.stage) }
   // Only her own month and the one either side of it can be read. A locked
   // month asked for by URL lands on her own month instead of being served.
-  const resolved = isMonthOpen(requested, thisMonth) ? requested : thisMonth
+  const resolved = isMonthOpen(requested, here) ? requested : here
+  const { stage } = resolved
 
   // The opening week is only reused when it belongs to the month being served:
   // after a locked month is turned away it holds that month's pieces, not these.
-  const weeks = weeksOf(resolved)
-  const reuseOpening = weeks.includes(opening.week)
+  const weeks = weeksOf(resolved.month, stage)
+  const reuseOpening = opening.stage === stage && weeks.includes(opening.week)
   const rest = await Promise.all(
     weeks
       .filter((week) => !reuseOpening || week !== opening.week)
-      .map((week) => getFeed({ week, lang: language }, config))
+      .map((week) => getFeed({ stage, week, lang: language }, config))
   )
 
   const itemsById = new Map<string, Content>()
@@ -107,22 +117,27 @@ export async function getMonthFeed(
     }
   }
 
-  const { first: firstOpenMonth, last: lastOpenMonth } = openMonthsAround(thisMonth)
+  // An arrow only ever steps into an open month, so it never leads to one
+  // that would be turned away.
+  const openStep = (delta: number) => {
+    const target = stepMonth(resolved, delta)
+    return target && isMonthOpen(target, here) ? target : null
+  }
   const items = [...itemsById.values()].sort((left, right) => left.startWeek - right.startWeek)
 
   return {
-    month: resolved,
-    startWeek: startWeekOf(resolved),
-    endWeek: endWeekOf(resolved),
-    weeksLabel: weeksLabelOf(resolved),
-    trimesterLabel: trimesterLabelOf(resolved),
-    currentMonth: resolved === thisMonth,
-    thisMonth,
+    stage,
+    month: resolved.month,
+    startWeek: startWeekOf(resolved.month, stage),
+    endWeek: endWeekOf(resolved.month, stage),
+    weeksLabel: weeksLabelOf(resolved.month, undefined, stage),
+    trimesterLabel: trimesterLabelOf(resolved.month, undefined, stage),
+    currentMonth: stage === here.stage && resolved.month === here.month,
+    thisStage: here.stage,
+    thisMonth: here.month,
     thisWeek: opening.thisWeek,
-    minMonth: MIN_MONTH,
-    maxMonth: MAX_MONTH,
-    firstOpenMonth,
-    lastOpenMonth,
+    previous: openStep(-1),
+    next: openStep(1),
     // Earliest week first, so a month that mixes whole-month material with a
     // piece written for its last fortnight still reads in order. The sort is
     // stable, so the API's own ordering within a week survives it.

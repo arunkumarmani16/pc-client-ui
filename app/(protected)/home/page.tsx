@@ -74,7 +74,9 @@ export default async function HomePage() {
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-semibold tracking-tight text-foreground">
-              {copy.home.forWeek(pregnancy.currentWeek)}
+              {feed?.thisStage === "POST_DELIVERY"
+                ? copy.home.forWeekAfterBirth(feed.thisWeek)
+                : copy.home.forWeek(pregnancy.currentWeek)}
             </h2>
             {feed && feed.items.length > PREVIEW_COUNT && (
               <Link
@@ -93,7 +95,11 @@ export default async function HomePage() {
           {feed === null ? (
             <Notice>{copy.home.loadFailed}</Notice>
           ) : feed.items.length === 0 ? (
-            <Notice>{copy.home.nothingForWeek(pregnancy.currentWeek)}</Notice>
+            <Notice>
+              {feed.thisStage === "POST_DELIVERY"
+                ? copy.guidance.nothingAfterBirth
+                : copy.home.nothingForWeek(pregnancy.currentWeek)}
+            </Notice>
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
               {preview.map((content) => (

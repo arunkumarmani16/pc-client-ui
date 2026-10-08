@@ -83,8 +83,13 @@ export const config = {
    * handlers, since login has to stay reachable while signed out.
    * `/api/backend` is deliberately inside the match: the forwarding happens
    * here.
+   *
+   * <p>The service worker and the manifest are let past too. The browser
+   * fetches both without asking whether anyone is signed in (to check for a
+   * new worker, or to install the app from the sign-in page), and a redirect
+   * to the login form in place of `sw.js` fails the registration outright.
    */
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

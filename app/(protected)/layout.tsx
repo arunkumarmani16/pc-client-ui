@@ -49,6 +49,8 @@ export default async function ProtectedLayout({
         language={language}
         languageLabel={copy.language}
         weekLabel={copy.weekBadge(patient.pregnancy.currentWeek)}
+        // All plain strings, like the account labels.
+        notificationLabels={words.notifications}
       />
       <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
         {children}

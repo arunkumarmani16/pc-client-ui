@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { LogOutIcon } from "lucide-react"
+import { DownloadIcon, LogOutIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -17,6 +17,8 @@ import {
 import { toast } from "@/components/ui/toast"
 import type { Patient } from "@/interface"
 import { LOGIN_PATH, SIGN_OUT_PATH } from "@/lib/auth/cookies"
+import { promptInstall, useInstall } from "@/lib/install"
+import { detachPush } from "@/lib/push"
 
 /**
  * The menu's words. Passed in as plain strings
@@ -29,6 +31,10 @@ export type AccountLabels = {
   signingOut: string
   signOutFailed: string
   tryAgain: string
+  install: string
+  installed: string
+  installIosTitle: string
+  installIos: string
 }
 
 function initials(fullName: string): string {
@@ -41,10 +47,28 @@ function initials(fullName: string): string {
 export function AccountMenu({ patient, labels }: { patient: Patient; labels: AccountLabels }) {
   const router = useRouter()
   const [isSigningOut, setSigningOut] = React.useState(false)
+  const install = useInstall()
+
+  async function installApp() {
+    if (install.manual) {
+      toast.add({ type: "info", title: labels.installIosTitle, description: labels.installIos })
+      return
+    }
+    try {
+      if (await promptInstall()) toast.add({ type: "success", title: labels.installed })
+    } catch (error) {
+      console.error("Install prompt failed", error)
+      toast.add({ type: "error", title: labels.install, description: labels.tryAgain })
+    }
+  }
 
   async function signOut() {
     setSigningOut(true)
     try {
+      // First, while the token still works: whoever signs in on this phone
+      // next must not be woken by her notifications.
+      await detachPush()
+
       // Drops the httpOnly cookie. The API is stateless, so there is nothing
       // else to revoke; the token simply stops being sent.
       const response = await fetch(SIGN_OUT_PATH, { method: "POST" })
@@ -87,6 +111,12 @@ export function AccountMenu({ patient, labels }: { patient: Patient; labels: Acc
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {(install.canPrompt || install.manual) && (
+          <DropdownMenuItem onClick={installApp}>
+            <DownloadIcon />
+            {labels.install}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={signOut} disabled={isSigningOut}>
           <LogOutIcon />
           {isSigningOut ? labels.signingOut : labels.signOut}
