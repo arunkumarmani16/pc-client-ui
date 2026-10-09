@@ -10,7 +10,7 @@ import type { Content, DocumentKind } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle, typeStyle } from "@/lib/content"
 import { requireAuthConfig, requireSession } from "@/lib/auth/session"
-import { isMonthOpen, monthOf } from "@/lib/pregnancy"
+import { isMonthOpen, monthOf, positionOf } from "@/lib/pregnancy"
 import { type Strings, stringsFor } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/translation/languages"
@@ -37,7 +37,13 @@ export default async function ContentPage({ params }: { params: Params }) {
   // strip hides it, and a shared or bookmarked URL must not be the way round.
   // `requireSession` is cached, so the layout has already paid for this lookup.
   const { patient } = await requireSession()
-  if (!isMonthOpen(content.pregnancyMonth, monthOf(patient.pregnancy.currentWeek))) {
+  const here = positionOf(patient.pregnancy.currentWeek)
+  if (
+    !isMonthOpen(
+      { stage: content.stage, month: content.pregnancyMonth },
+      { stage: here.stage, month: monthOf(here.week, here.stage) }
+    )
+  ) {
     redirect(GUIDANCE_PATH)
   }
 

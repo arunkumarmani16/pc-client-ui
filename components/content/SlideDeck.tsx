@@ -331,7 +331,7 @@ function DeckControls({
   onOpen: () => void
 }) {
   return (
-    <div className="flex items-center gap-2 border-t bg-card px-2 py-2">
+    <div className="flex items-center gap-2 border-t glass-strong px-2 py-2">
       <RailButton
         label={copy.previousPage}
         disabled={page <= 1}

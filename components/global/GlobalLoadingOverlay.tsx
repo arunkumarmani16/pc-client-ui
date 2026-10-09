@@ -22,7 +22,7 @@ export default function GlobalLoadingOverlay() {
         login card: here it stands in for progress, and a slow sweep reads as
         a stall.
       */}
-      <div className="animate-rise w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border bg-card shadow-xl">
+      <div className="animate-rise w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl glass-strong">
         <EcgLine duration={1.4} className="h-14 w-full" />
         <p className="border-t px-4 py-3 text-center text-sm text-muted-foreground">
           Loading, please wait…

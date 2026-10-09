@@ -6,9 +6,11 @@ import { HeartPulse } from "lucide-react"
 import { AccountMenu, type AccountLabels } from "@/components/global/AccountMenu"
 import { AppNavLinks, type NavLabels } from "@/components/global/AppNav"
 import { LanguageSwitcher } from "@/components/global/LanguageSwitcher"
+import { NotificationBell } from "@/components/global/NotificationBell"
 import { Badge } from "@/components/ui/badge"
 import type { Patient } from "@/interface"
 import { HOME_PATH } from "@/lib/auth/cookies"
+import type { Strings } from "@/lib/strings"
 import type { Language } from "@/lib/translation/languages"
 
 /**
@@ -17,9 +19,11 @@ import type { Language } from "@/lib/translation/languages"
  * <p>A top bar rather than the console's sidebar: the portal is used on a
  * phone first, and has a handful of destinations rather than a menu tree.
  *
- * <p>The `after` rule lays the console header's teal-to-blush hairline over
- * the bottom border, the one place the brand appears on every screen without
- * taking up any room.
+ * <p>Frosted glass laid over the top of the scrolling page rather than a solid
+ * bar above it, so the page shows through, blurred, as it passes underneath.
+ * The `after` rule lays the console header's teal-to-blush hairline along its
+ * bottom edge, the one place the brand appears on every screen without taking
+ * up any room.
  */
 export function AppHeader({
   patient,
@@ -28,6 +32,7 @@ export function AppHeader({
   language,
   languageLabel,
   weekLabel,
+  notificationLabels,
 }: {
   patient: Patient
   navLabels: NavLabels
@@ -37,9 +42,11 @@ export function AppHeader({
   languageLabel: string
   /** "Week 24", already worded and numbered by the shell. */
   weekLabel: string
+  /** The bell and its panel, in the language she is reading in. */
+  notificationLabels: Strings["notifications"]
 }) {
   return (
-    <header className="relative flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-primary/50 after:via-blush/30 after:to-transparent sm:px-6">
+    <header className="glass-strong absolute inset-x-0 top-0 z-30 flex h-14 items-center gap-3 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-primary/50 after:via-blush/30 after:to-transparent sm:px-6">
       <Link
         href={HOME_PATH}
         className="flex min-w-0 items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -69,6 +76,7 @@ export function AppHeader({
         <Badge variant="secondary" className="tabular-nums">
           {weekLabel}
         </Badge>
+        <NotificationBell labels={notificationLabels} language={language} />
         <AccountMenu patient={patient} labels={accountLabels} />
       </div>
     </header>

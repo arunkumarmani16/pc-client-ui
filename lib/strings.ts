@@ -57,6 +57,8 @@ const en = {
     language: "Language",
     /** The figure in the header, which is the one thing there that is not a place. */
     weekBadge: (week: number) => `Week ${week}`,
+    /** Read out while a page is on its way; the skeleton says it to sighted readers. */
+    loading: "Loading…",
   },
 
   guidance: {
@@ -92,6 +94,19 @@ const en = {
       `Nothing published for week ${week} — do look at the rest of the month.`,
     nothingInTopicForWeek: (week: number) => `Nothing in this topic for week ${week}.`,
     nothingInTopicThisMonth: "Nothing in this topic this month.",
+
+    /**
+     * The one month after the birth, which follows month 10 with its weeks
+     * counted from the birth. Said outright every time: "week 2" alone reads
+     * as early pregnancy. No month number — there is only the one.
+     */
+    afterBirth: "After birth",
+    monthAfterBirth: "First month after birth",
+    afterBirthAndWeek: (week: number) => `After birth · week ${week}`,
+    youAreHereAfterBirth: (week: number) => `You are here · week ${week} after birth`,
+    backToAfterBirth: "Back to your month after birth",
+    monthAfterBirthAria: (weeks: string) => `First month after birth, weeks ${weeks}`,
+    nothingAfterBirth: "There is nothing published for the month after birth yet.",
   },
 
   content: {
@@ -125,6 +140,8 @@ const en = {
     } satisfies Record<ContentCategory, string>,
     rangeLabel: (month: number, start: number, end: number) =>
       `Month ${month} · ${start === end ? `week ${start}` : `weeks ${start}-${end}`}`,
+    rangeLabelAfterBirth: (start: number, end: number) =>
+      `After birth · ${start === end ? `week ${start}` : `weeks ${start}-${end}`}`,
 
 
     /**
@@ -150,6 +167,7 @@ const en = {
       count === 1 ? "piece of guidance for you" : "pieces of guidance for you",
     couldNotLoad: "Guidance could not be loaded",
     forWeek: (week: number) => `For week ${week}`,
+    forWeekAfterBirth: (week: number) => `For week ${week} after birth`,
     loadFailed:
       "We could not load your guidance just now. Please refresh the page, or try again in a moment.",
     nothingForWeek: (week: number) =>
@@ -215,6 +233,47 @@ const en = {
     signingOut: "Signing out...",
     signOutFailed: "Could not sign out",
     tryAgain: "Please try again.",
+    install: "Install app",
+    installed: "Installed. Open Pregnancy Care from your home screen.",
+    installIosTitle: "Add to Home Screen",
+    installIos: "Tap the Share button in Safari, then “Add to Home Screen”.",
+  },
+
+  /**
+   * The bell and the notifications page. Plain strings only, like `account`:
+   * the whole object crosses into client components. Counts and times are
+   * worded in the browser with `Intl`, which knows Tamil as well as English.
+   */
+  notifications: {
+    title: "Notifications",
+    intro: "Messages from your clinic, and news of each new week.",
+    bell: "Notifications",
+    markAllRead: "Mark all as read",
+    empty: "Nothing here yet. When your clinic sends you something, it will appear here.",
+    loadMore: "Show older",
+    clear: "Clear",
+    clearAll: "Clear all",
+    clearAllConfirm: "Tap again to clear all",
+    autoClear: "Notifications older than 10 days are cleared automatically.",
+    loadFailed: "Notifications could not be loaded. Please try again.",
+    unread: "Unread",
+
+    deviceTitle: "On this phone",
+    deviceSwitch: "Notifications on this phone",
+    turnOn: "Turn on notifications",
+    turningOn: "Turning on...",
+    turnOff: "Turn off",
+    sendTest: "Send a test",
+    testSent: "Test sent. It should arrive in a moment.",
+    stateOff:
+      "Get a message on this phone when your clinic writes to you or a new week begins, even with the app closed.",
+    stateOn: "Notifications are on for this phone.",
+    stateDenied:
+      "Notifications are blocked for this app. To turn them on, allow notifications for this site in your browser's settings.",
+    stateUnsupported: "This browser cannot show notifications. Your messages will still appear below.",
+    stateNeedsInstall:
+      "To get notifications on an iPhone, add this app to your Home Screen: tap the Share button, then “Add to Home Screen”, and open it from there.",
+    failed: "That did not work. Please try again.",
   },
 
   video: {
@@ -271,6 +330,7 @@ const ta: Strings = {
     profile: "என் விவரங்கள்",
     language: "மொழி",
     weekBadge: (week) => `வாரம் ${week}`,
+    loading: "ஏற்றப்படுகிறது…",
   },
 
   guidance: {
@@ -303,6 +363,14 @@ const ta: Strings = {
       `வாரம் ${week} க்கு எதுவும் இல்லை — மாதத்தின் மற்ற வாரங்களைப் பாருங்கள்.`,
     nothingInTopicForWeek: (week) => `வாரம் ${week} க்கு இந்தத் தலைப்பில் எதுவும் இல்லை.`,
     nothingInTopicThisMonth: "இந்த மாதம் இந்தத் தலைப்பில் எதுவும் இல்லை.",
+
+    afterBirth: "பிரசவத்திற்குப் பின்",
+    monthAfterBirth: "பிரசவத்திற்குப் பின் முதல் மாதம்",
+    afterBirthAndWeek: (week) => `பிரசவத்திற்குப் பின் · வாரம் ${week}`,
+    youAreHereAfterBirth: (week) => `நீங்கள் இங்கே · பிரசவத்திற்குப் பின் வாரம் ${week}`,
+    backToAfterBirth: "பிரசவத்திற்குப் பின் உள்ள மாதத்திற்குத் திரும்பு",
+    monthAfterBirthAria: (weeks) => `பிரசவத்திற்குப் பின் முதல் மாதம், வாரங்கள் ${weeks}`,
+    nothingAfterBirth: "பிரசவத்திற்குப் பின் உள்ள மாதத்திற்கு இதுவரை எதுவும் வெளியிடப்படவில்லை.",
   },
 
   content: {
@@ -330,6 +398,8 @@ const ta: Strings = {
     },
     rangeLabel: (month, start, end) =>
       `மாதம் ${month} · ${start === end ? `வாரம் ${start}` : `வாரங்கள் ${start}-${end}`}`,
+    rangeLabelAfterBirth: (start, end) =>
+      `பிரசவத்திற்குப் பின் · ${start === end ? `வாரம் ${start}` : `வாரங்கள் ${start}-${end}`}`,
 
 
     notTranslated: "இது இன்னும் தமிழில் கிடைக்கவில்லை — உங்கள் மருத்துவமனை எழுதியபடி காட்டப்படுகிறது.",
@@ -347,6 +417,7 @@ const ta: Strings = {
       count === 1 ? "உங்களுக்கான வழிகாட்டுதல்" : "உங்களுக்கான வழிகாட்டுதல்கள்",
     couldNotLoad: "வழிகாட்டுதல்களை ஏற்ற முடியவில்லை",
     forWeek: (week) => `வாரம் ${week} க்கானவை`,
+    forWeekAfterBirth: (week) => `பிரசவத்திற்குப் பின் வாரம் ${week} க்கானவை`,
     loadFailed:
       "இப்போது உங்கள் வழிகாட்டுதல்களை ஏற்ற முடியவில்லை. பக்கத்தைப் புதுப்பிக்கவும், அல்லது சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்.",
     nothingForWeek: (week) =>
@@ -408,6 +479,43 @@ const ta: Strings = {
     signingOut: "வெளியேறுகிறது...",
     signOutFailed: "வெளியேற முடியவில்லை",
     tryAgain: "மீண்டும் முயற்சிக்கவும்.",
+    install: "செயலியை நிறுவு",
+    installed: "நிறுவப்பட்டது. உங்கள் முகப்புத் திரையிலிருந்து Pregnancy Care-ஐத் திறக்கவும்.",
+    installIosTitle: "முகப்புத் திரையில் சேர்",
+    installIos: "Safari-யில் பகிர் பொத்தானைத் தட்டி, “Add to Home Screen” என்பதைத் தேர்ந்தெடுக்கவும்.",
+  },
+
+  notifications: {
+    title: "அறிவிப்புகள்",
+    intro: "உங்கள் மருத்துவமனையின் செய்திகளும், ஒவ்வொரு புதிய வாரம் பற்றிய தகவலும்.",
+    bell: "அறிவிப்புகள்",
+    markAllRead: "அனைத்தையும் படித்ததாகக் குறி",
+    empty: "இங்கே இன்னும் எதுவும் இல்லை. உங்கள் மருத்துவமனை ஏதேனும் அனுப்பும்போது, அது இங்கே தோன்றும்.",
+    loadMore: "பழையவற்றைக் காட்டு",
+    clear: "அழி",
+    clearAll: "அனைத்தையும் அழி",
+    clearAllConfirm: "அனைத்தையும் அழிக்க மீண்டும் தட்டவும்",
+    autoClear: "10 நாட்களுக்கு மேற்பட்ட அறிவிப்புகள் தானாகவே அழிக்கப்படும்.",
+    loadFailed: "அறிவிப்புகளை ஏற்ற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+    unread: "படிக்காதது",
+
+    deviceTitle: "இந்த ஃபோனில்",
+    deviceSwitch: "இந்த ஃபோனில் அறிவிப்புகள்",
+    turnOn: "அறிவிப்புகளை இயக்கு",
+    turningOn: "இயக்குகிறது...",
+    turnOff: "நிறுத்து",
+    sendTest: "சோதனை அனுப்பு",
+    testSent: "சோதனை அனுப்பப்பட்டது. சிறிது நேரத்தில் வந்து சேரும்.",
+    stateOff:
+      "உங்கள் மருத்துவமனை உங்களுக்கு எழுதும்போதும் புதிய வாரம் தொடங்கும்போதும், ஆப் மூடியிருந்தாலும் இந்த ஃபோனில் செய்தி பெறுங்கள்.",
+    stateOn: "இந்த ஃபோனில் அறிவிப்புகள் இயக்கத்தில் உள்ளன.",
+    stateDenied:
+      "இந்த ஆப்பிற்கு அறிவிப்புகள் தடுக்கப்பட்டுள்ளன. அவற்றை இயக்க, உங்கள் உலாவி அமைப்புகளில் இந்தத் தளத்திற்கு அறிவிப்புகளை அனுமதிக்கவும்.",
+    stateUnsupported:
+      "இந்த உலாவியில் அறிவிப்புகளைக் காட்ட முடியாது. உங்கள் செய்திகள் கீழே தொடர்ந்து தோன்றும்.",
+    stateNeedsInstall:
+      "iPhone-இல் அறிவிப்புகளைப் பெற, இந்த ஆப்பை உங்கள் முகப்புத் திரையில் சேர்க்கவும்: பகிர் பொத்தானைத் தட்டி, “Add to Home Screen” என்பதைத் தேர்ந்தெடுத்து, அங்கிருந்து திறக்கவும்.",
+    failed: "அது வேலை செய்யவில்லை. மீண்டும் முயற்சிக்கவும்.",
   },
 
   video: {

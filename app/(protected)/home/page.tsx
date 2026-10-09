@@ -74,7 +74,9 @@ export default async function HomePage() {
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-semibold tracking-tight text-foreground">
-              {copy.home.forWeek(pregnancy.currentWeek)}
+              {feed?.thisStage === "POST_DELIVERY"
+                ? copy.home.forWeekAfterBirth(feed.thisWeek)
+                : copy.home.forWeek(pregnancy.currentWeek)}
             </h2>
             {feed && feed.items.length > PREVIEW_COUNT && (
               <Link
@@ -93,7 +95,11 @@ export default async function HomePage() {
           {feed === null ? (
             <Notice>{copy.home.loadFailed}</Notice>
           ) : feed.items.length === 0 ? (
-            <Notice>{copy.home.nothingForWeek(pregnancy.currentWeek)}</Notice>
+            <Notice>
+              {feed.thisStage === "POST_DELIVERY"
+                ? copy.guidance.nothingAfterBirth
+                : copy.home.nothingForWeek(pregnancy.currentWeek)}
+            </Notice>
           ) : (
             <div className="stagger grid gap-3 sm:grid-cols-2">
               {preview.map((content) => (
@@ -145,7 +151,7 @@ function ProgressCard({
   progressPercent: number
 }) {
   return (
-    <section className="animate-rise overflow-hidden rounded-xl border bg-card">
+    <section className="animate-rise overflow-hidden rounded-2xl glass">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 p-4 sm:p-5">
         <div>
           <h2 className="text-sm text-muted-foreground">{heading}</h2>
@@ -193,7 +199,7 @@ function SummaryCard({
   hint: string
 }) {
   return (
-    <section className="rounded-xl border bg-card p-4 sm:p-5">
+    <section className="rounded-2xl glass p-4 sm:p-5">
       <h2 className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <span className="text-primary">{icon}</span>
         {label}
@@ -208,7 +214,7 @@ function SummaryCard({
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm leading-relaxed text-muted-foreground">
+    <p className="rounded-2xl border border-dashed border-foreground/15 glass px-4 py-6 text-center text-sm leading-relaxed text-muted-foreground">
       {children}
     </p>
   )

@@ -89,6 +89,10 @@
   /* A track filling to its value. Scales rather than animating `width` so it
      runs on the compositor; the element must carry `origin-left`. */
   --animate-fill: hc-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* A segment crossing a track with no known end: the page loader's bar.
+     Eased in and out so it gathers and releases speed rather than sliding at
+     a constant rate, which reads as stuck. */
+  --animate-progress: hc-progress 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 :root {
@@ -146,6 +150,20 @@
   --chart-5: oklch(0.68 0.13 75);
 
   --radius: 0.625rem;
+
+  /* Glass. Tints are kept opaque enough that muted text still clears AA on
+     them whatever scrolls behind; the blur is for depth, not for legibility
+     to depend on. `edge` is the lit top rim, `edge-low` the faint one under
+     it, and together they are what make a pane read as glass rather than as
+     a translucent rectangle. */
+  --glass-tint: oklch(1 0 0 / 58%);
+  --glass-tint-strong: oklch(0.995 0.003 210 / 72%);
+  --glass-sheen: oklch(1 0 0 / 55%);
+  --glass-edge: oklch(1 0 0 / 85%);
+  --glass-edge-low: oklch(1 0 0 / 30%);
+  --glass-outline: oklch(0.45 0.03 220 / 11%);
+  --glass-shadow: 0 1px 2px oklch(0.3 0.04 230 / 5%),
+    0 10px 32px -14px oklch(0.4 0.07 205 / 28%);
 }
 
 .dark {
@@ -191,6 +209,14 @@
   --chart-3: oklch(0.7 0.13 248);
   --chart-4: oklch(0.74 0.14 350);
   --chart-5: oklch(0.79 0.13 75);
+
+  --glass-tint: oklch(0.27 0.026 238 / 55%);
+  --glass-tint-strong: oklch(0.235 0.024 238 / 72%);
+  --glass-sheen: oklch(1 0 0 / 9%);
+  --glass-edge: oklch(1 0 0 / 20%);
+  --glass-edge-low: oklch(1 0 0 / 5%);
+  --glass-outline: oklch(1 0 0 / 9%);
+  --glass-shadow: 0 12px 36px -14px oklch(0 0 0 / 55%);
 }
 
 @layer base {
@@ -287,6 +313,17 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+/* From fully off the left of the track to fully off the right, for a segment
+   two fifths of its track wide (250% of itself clears the remaining 60%). */
+@keyframes hc-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
   }
 }
 
@@ -390,7 +427,11 @@
     border-color 0.2s ease;
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--primary), transparent 78%);
+    /* Keeps a glass card's rim through the hover rather than trading it
+       for the lift shadow; a card with no rim falls back to a no-op. */
+    box-shadow:
+      var(--glass-rim, 0 0 #0000),
+      0 10px 28px -10px color-mix(in oklch, var(--primary), transparent 70%);
   }
   &:active {
     transform: translateY(0);
@@ -408,6 +449,131 @@
   background-size: 200% 100%;
   background-repeat: no-repeat;
   animation: var(--animate-shimmer);
+}
+
+/* ---------------------------------------------------------------------------
+   Glass
+
+   Frosted, top-lit panes over a softly coloured ground. Every pane is built
+   from background layers and box shadows only, never a pseudo-element, so a
+   utility never has to claim `position` and fight an `absolute` at the call
+   site. Each falls back to a solid surface where the browser cannot blur, and
+   where the reader has asked the OS for less transparency.
+   ------------------------------------------------------------------------ */
+
+/* Not inherited, so a card nested inside a glass pane does not pick up the
+   pane's rim when `lift` reads it on hover. */
+@property --glass-rim {
+  syntax: "*";
+  inherits: false;
+}
+
+/**
+ * The ground the glass sits on: the off-white with a teal light top left,
+ * blush to the right and a little blue underneath. Put it on a box that does
+ * not itself scroll (the shell, not `<main>`), so the lights hold still while
+ * the page moves through them, which is most of what sells the glass.
+ */
+@utility glass-ambient {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      48rem 36rem at -8% -6%,
+      color-mix(in oklch, var(--primary), transparent 80%),
+      transparent 62%
+    ),
+    radial-gradient(
+      40rem 32rem at 108% 28%,
+      color-mix(in oklch, var(--blush), transparent 84%),
+      transparent 60%
+    ),
+    radial-gradient(
+      44rem 34rem at 40% 112%,
+      color-mix(in oklch, var(--info), transparent 87%),
+      transparent 62%
+    );
+}
+
+/**
+ * A card. Light blur, because a phone may be compositing a dozen of these
+ * in one scrolling list and the low-end ones feel every extra pixel.
+ */
+@utility glass {
+  --glass-rim:
+    inset 0 1px 0 0 var(--glass-edge), inset 0 0 0 1px var(--glass-outline),
+    inset 0 -1px 0 0 var(--glass-edge-low);
+  background-color: var(--glass-tint);
+  /* The sheen: light pooling along the top edge the way it does on a curved
+     pane, rather than a flat wash across the whole thing. */
+  background-image: radial-gradient(
+    120% 70% at 50% -20%,
+    var(--glass-sheen),
+    transparent 60%
+  );
+  box-shadow: var(--glass-rim), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--card);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/**
+ * Chrome that content scrolls underneath (the header, the tab bar) and
+ * anything floating over the page (menus, sheets, toasts). Thicker and more
+ * opaque than a card, because what is behind it is moving text rather than
+ * the still ground.
+ */
+@utility glass-strong {
+  --glass-rim:
+    inset 0 1px 0 0 var(--glass-edge), inset 0 0 0 1px var(--glass-outline),
+    inset 0 -1px 0 0 var(--glass-edge-low);
+  background-color: var(--glass-tint-strong);
+  background-image: radial-gradient(
+    120% 80% at 50% -30%,
+    var(--glass-sheen),
+    transparent 65%
+  );
+  box-shadow: var(--glass-rim), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--popover);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--popover);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/**
+ * The liquid drop: a lens of tinted glass, brighter at the rim than in the
+ * middle, for the one selected thing in a group (the current tab). The glow
+ * along its bottom is the light the drop gathers and throws back down, which
+ * is what makes it look filled rather than outlined.
+ */
+@utility liquid-drop {
+  background-color: color-mix(in oklch, var(--primary), transparent 86%);
+  background-image:
+    radial-gradient(90% 60% at 50% 0%, var(--glass-sheen), transparent 70%),
+    radial-gradient(
+      70% 50% at 50% 110%,
+      color-mix(in oklch, var(--primary), transparent 75%),
+      transparent 70%
+    );
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-edge),
+    inset 0 0 0 1px color-mix(in oklch, var(--primary), transparent 80%),
+    inset 0 -6px 12px -6px color-mix(in oklch, var(--primary), transparent 70%),
+    0 4px 14px -6px color-mix(in oklch, var(--primary), transparent 60%);
 }
 
 /* ---------------------------------------------------------------------------

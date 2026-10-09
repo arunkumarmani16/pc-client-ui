@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { BookOpenIcon, HouseIcon, UserRoundIcon } from "lucide-react"
 
+import { LinkPending } from "@/components/global/LinkPending"
 import { GUIDANCE_PATH, HOME_PATH, PROFILE_PATH } from "@/lib/auth/cookies"
 import { cn } from "@/lib/utils"
 
@@ -60,12 +61,16 @@ export function AppNavLinks({ labels }: { labels: NavLabels }) {
             href={href}
             aria-current={current ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "relative isolate flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               current
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "liquid-drop text-primary"
+                : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
             )}
           >
+            <LinkPending
+              className="inset-0 -z-10 rounded-full"
+              pendingClassName="liquid-drop animate-pulse"
+            />
             <Icon className="size-4" />
             {labels[key]}
           </Link>
@@ -78,19 +83,40 @@ export function AppNavLinks({ labels }: { labels: NavLabels }) {
 /**
  * The phone's bottom tab bar.
  *
- * <p>A flex sibling of the scrolling area rather than a fixed overlay: laid
- * out in the flow it cannot cover the last card, so no page has to leave a gap
- * the height of the bar and no gap can be the wrong size. `pb-safe` clears the
- * iOS home indicator.
+ * <p>A pill of glass floating just above the bottom edge, with the page
+ * scrolling underneath it. The shell pads `<main>` by the pill's height, so
+ * the last card can still be scrolled clear of it. Its offset from the bottom
+ * takes whichever is larger, a small gap or the iOS home indicator, so it
+ * clears the indicator without sitting a gap above it as well.
+ *
+ * <p>The current tab is marked by one liquid drop that slides between tabs
+ * rather than by each tab lighting up on its own. The slight overshoot in its
+ * easing is what makes it read as liquid settling instead of a box moving.
  */
 export function AppTabBar({ labels }: { labels: NavLabels }) {
   const pathname = usePathname()
+  const currentIndex = DESTINATIONS.findIndex(({ href }) => isCurrent(pathname, href))
 
   return (
     <nav
       aria-label={labels.guidance}
-      className="pb-safe flex shrink-0 border-t bg-card sm:hidden"
+      className="glass-strong fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] z-30 mx-auto flex max-w-sm rounded-full p-1.5 sm:hidden"
     >
+      {/*
+        Sized to one tab of the three (the pill less its padding, split three
+        ways) and moved by whole widths of itself, so it lands exactly on the
+        tab at any phone width. Hidden on a page that is not one of the three,
+        rather than left parked on the last one visited.
+      */}
+      <span
+        aria-hidden
+        className={cn(
+          "liquid-drop pointer-events-none absolute inset-y-1.5 left-1.5 w-[calc((100%-0.75rem)/3)] rounded-full transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.34,1.45,0.5,1)]",
+          currentIndex < 0 && "opacity-0"
+        )}
+        style={{ transform: `translateX(${Math.max(currentIndex, 0) * 100}%)` }}
+      />
+
       {DESTINATIONS.map(({ href, key, icon: Icon }) => {
         const current = isCurrent(pathname, href)
 
@@ -102,11 +128,17 @@ export function AppTabBar({ labels }: { labels: NavLabels }) {
             className={cn(
               // A tall target: this is the one control used one-handed, on the
               // move, and 44px is the smallest that reliably gets hit.
-              "flex min-h-14 flex-1 flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset",
+              "relative isolate flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-full text-[0.6875rem] font-medium transition-[color,transform] outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset active:scale-95",
               current ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <Icon className={cn("size-5", current && "fill-primary/10")} />
+            {/* A faint drop under the tapped tab until the page commits, when
+                the real one slides across to take its place. */}
+            <LinkPending
+              className="inset-0 -z-10 rounded-full"
+              pendingClassName="liquid-drop animate-pulse"
+            />
+            <Icon className={cn("size-5", current && "fill-primary/15")} />
             {labels[key]}
           </Link>
         )

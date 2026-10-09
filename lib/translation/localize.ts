@@ -34,7 +34,10 @@ export function localizeContent(content: Content, language: Language): Content {
     ...content,
     typeLabel: copy.types[content.contentType] ?? content.typeLabel,
     categoryLabel: copy.categories[content.category] ?? content.categoryLabel,
-    rangeLabel: copy.rangeLabel(content.pregnancyMonth, content.startWeek, content.endWeek),
+    rangeLabel:
+      content.stage === "POST_DELIVERY"
+        ? copy.rangeLabelAfterBirth(content.startWeek, content.endWeek)
+        : copy.rangeLabel(content.pregnancyMonth, content.startWeek, content.endWeek),
   }
 }
 
@@ -51,8 +54,8 @@ export function localizeMonthFeed(feed: MonthFeed, language: Language): MonthFee
   return {
     ...feed,
     items: localizeContents(feed.items, language),
-    weeksLabel: weeksLabelOf(feed.month, copy),
-    trimesterLabel: trimesterLabelOf(feed.month, copy),
+    weeksLabel: weeksLabelOf(feed.month, copy, feed.stage),
+    trimesterLabel: trimesterLabelOf(feed.month, copy, feed.stage),
   }
 }
 

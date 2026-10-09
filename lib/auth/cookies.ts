@@ -40,6 +40,15 @@ export const GUIDANCE_PATH = "/guidance"
 /** Her own registration details. */
 export const PROFILE_PATH = "/profile"
 
+/**
+ * Where a tapped push lands when it names nowhere in particular (see sw.js).
+ * Not a page of its own any more: it opens the bell's panel over home.
+ */
+export const NOTIFICATIONS_PATH = "/notifications"
+
+/** On any page's URL, opens the bell's notification panel once. */
+export const OPEN_NOTIFICATIONS_PARAM = "notifications"
+
 /** Query parameter carrying the page the patient was trying to reach. */
 export const REDIRECT_PARAM = "next"
 

@@ -1,6 +1,13 @@
 /** What a piece of guidance is, and how the app renders it. Mirrors `ContentType`. */
 export type ContentType = "VIDEO" | "ARTICLE" | "SUGGESTION" | "TIP"
 
+/**
+ * Which side of the birth a piece is written for. Mirrors `ContentStage`.
+ * Every month and week is counted within one: week 3 of `POST_DELIVERY` is
+ * three weeks after the birth.
+ */
+export type ContentStage = "PREGNANCY" | "POST_DELIVERY"
+
 /** Subject a piece belongs to. Mirrors `ContentCategory`. */
 export type ContentCategory =
   | "NUTRITION"
@@ -105,11 +112,14 @@ export interface Content {
   /** Documents to page through, shown as a slideshow. */
   documents: ContentDocument[]
 
+  /** Before or after the birth; the month and weeks below count within it. */
+  stage: ContentStage
   pregnancyMonth: number
   startWeek: number
   endWeek: number
-  trimester: 1 | 2 | 3
-  /** e.g. "Month 5 · weeks 17-20". */
+  /** Null after the birth, where there is no trimester to name. */
+  trimester: 1 | 2 | 3 | null
+  /** e.g. "Month 5 · weeks 17-20", or "After birth · month 2 · weeks 5-8". */
   rangeLabel: string
 
   /**
@@ -131,14 +141,20 @@ export interface Content {
  * off the end, and a second copy of that rule would drift from it.
  */
 export interface Feed {
+  /** Which side of the birth the week being shown is on. */
+  stage: ContentStage
   week: number
   month: number
-  trimester: 1 | 2 | 3
+  /** Null after the birth. */
+  trimester: 1 | 2 | 3 | null
   rangeLabel: string
   /** True when the week being shown is the week she is actually in. */
   currentWeek: boolean
-  /** The week she is in, whichever week is being shown. */
+  /** The side of the birth she is on today, whichever week is being shown. */
+  thisStage: ContentStage
+  /** The week she is in, within `thisStage`. */
   thisWeek: number
+  /** Bounds of `stage`, the stage being shown. */
   minWeek: number
   maxWeek: number
   items: Content[]
@@ -146,6 +162,8 @@ export interface Feed {
 
 /** Filters the feed accepts. */
 export interface FeedQuery {
+  /** Which side of the birth `week` counts from. Omit both for today. */
+  stage?: ContentStage
   /** Omit for the week she is in today. */
   week?: number
   type?: ContentType
@@ -168,25 +186,31 @@ export interface FeedQuery {
  * happened to be asked for.
  */
 export interface MonthFeed {
+  /** Which side of the birth the month being shown is on. */
+  stage: ContentStage
+  /** Counted within `stage`. */
   month: number
   startWeek: number
   endWeek: number
   /** e.g. "weeks 17–20". */
   weeksLabel: string
-  /** e.g. "Second trimester"; both, for the month that straddles two. */
+  /**
+   * e.g. "Second trimester"; both, for the month that straddles two; "After
+   * birth" once past it.
+   */
   trimesterLabel: string
   /** True when this is the month the mother is actually in today. */
   currentMonth: boolean
-  /** The month she is in, whichever month is being shown. */
+  /** The side of the birth she is on today, whichever month is being shown. */
+  thisStage: ContentStage
+  /** The month she is in, within `thisStage`. */
   thisMonth: number
   /** The week she is in, for the one line that still speaks in weeks. */
   thisWeek: number
-  minMonth: number
-  maxMonth: number
-  /** First month she can open: the one before hers. Earlier months are locked. */
-  firstOpenMonth: number
-  /** Last month she can open: the one after hers. Later months are locked. */
-  lastOpenMonth: number
+  /** The month the back arrow opens, or null when it is locked or there is none. */
+  previous: { stage: ContentStage; month: number } | null
+  /** The month the forward arrow opens, or null when it is locked or there is none. */
+  next: { stage: ContentStage; month: number } | null
   /** Everything published for the month, in the order staff filed it. */
   items: Content[]
 }

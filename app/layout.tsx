@@ -21,6 +21,18 @@ export const metadata: Metadata = {
     // into tel: links.
     telephone: false,
   },
+  // Added to an iPhone's Home Screen, the portal opens as an app of its own,
+  // which is also what lets iOS deliver its notifications. The manifest
+  // (app/manifest.ts) does the same for Android and desktop.
+  appleWebApp: {
+    capable: true,
+    title: "Pregnancy Care",
+    statusBarStyle: "default",
+  },
+  // Only the Home Screen icon: app/favicon.ico still serves the tab.
+  icons: {
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
 }
 
 /**
