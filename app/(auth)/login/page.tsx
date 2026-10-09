@@ -50,7 +50,7 @@ export default async function LoginPage({
       */}
       <div className="relative flex min-h-full flex-col px-4 py-8 sm:px-6 sm:py-12">
         <div className="animate-rise m-auto w-full max-w-sm">
-          <div className="overflow-hidden rounded-2xl bg-card shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_48px_-16px_color-mix(in_oklch,var(--primary),transparent_70%)] ring-1 ring-border">
+          <div className="overflow-hidden rounded-3xl glass-strong">
             {/* Unhurried: nothing is loading, so a busy rate would be a lie. */}
             <EcgLine duration={3.4} className="h-12 w-full text-primary/70" />
 

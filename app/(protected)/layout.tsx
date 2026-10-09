@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/global/AppHeader"
 import { AppTabBar } from "@/components/global/AppNav"
+import { LoadingLabelProvider } from "@/components/global/RouteLoading"
 import { requireSession } from "@/lib/auth/session"
 import { stringsFor } from "@/lib/strings"
 import { currentLanguage } from "@/lib/translation/current"
@@ -12,9 +13,16 @@ import { currentLanguage } from "@/lib/translation/current"
  * request, so a page inside this layout that also needs the patient calls it
  * again without a second API round trip.
  *
- * <p>Header and tab bar sit outside the scrolling `<main>`, so both stay put
- * while the page moves under them — and because the tab bar is laid out in the
- * flow rather than fixed over the content, no page has to reserve room for it.
+ * <p>Header and tab bar float over the scrolling `<main>` rather than beside
+ * it, so the page moves underneath their glass and shows through it. `<main>`
+ * still runs the full height and pads itself clear of both, so no page has to
+ * reserve room for them: the padding scrolls with the content, which is what
+ * lets the first card start below the header and the last one finish above
+ * the tab bar, yet pass under either on the way.
+ *
+ * <p>The ambient ground is on this box rather than on `<main>` because this
+ * box does not scroll, so the coloured lights stay where they are while the
+ * glass slides over them.
  */
 export default async function ProtectedLayout({
   children,
@@ -40,7 +48,7 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background" lang={language}>
+    <div className="glass-ambient relative h-dvh overflow-hidden" lang={language}>
       <AppHeader
         patient={patient}
         navLabels={navLabels}
@@ -52,8 +60,12 @@ export default async function ProtectedLayout({
         // All plain strings, like the account labels.
         notificationLabels={words.notifications}
       />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
-        {children}
+      {/* `pt-14` is the header; the phone's bottom padding is the floating
+          tab bar (3.75rem tall, 0.75rem off the edge) plus a little air, on
+          top of the home indicator. */}
+      <main className="h-full overflow-x-hidden overflow-y-auto overscroll-contain pt-14 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
+        {/* Gives the page loader its word in her language. */}
+        <LoadingLabelProvider label={copy.loading}>{children}</LoadingLabelProvider>
       </main>
       <AppTabBar labels={navLabels} />
     </div>

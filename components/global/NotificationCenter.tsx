@@ -22,6 +22,7 @@ import {
   disablePush,
   enablePush,
   getPushState,
+  isPushServiceUnavailable,
   NOTIFICATIONS_CHANGED_EVENT,
   pushErrorMessage,
   type PushState,
@@ -187,7 +188,7 @@ export function NotificationCenter({
     <div className="flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-6">
       <DeviceCard labels={labels} language={language} />
 
-      <section className="overflow-hidden rounded-xl border bg-card">
+      <section className="overflow-hidden rounded-2xl glass">
         <div className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
           <Button
             variant="ghost"
@@ -336,7 +337,10 @@ function DeviceCard({ labels, language }: { labels: Labels; language: Language }
     try {
       setState(await enablePush(language))
     } catch (error) {
-      console.error("Could not turn on notifications", error)
+      // The toast already says what to do about an unreachable push service;
+      // only anything else is a fault worth an error in the console.
+      if (isPushServiceUnavailable(error)) console.warn("Push service unreachable", error)
+      else console.error("Could not turn on notifications", error)
       toast.add({ type: "error", title: labels.failed, description: pushErrorMessage(error) })
     } finally {
       setBusy(false)
@@ -378,7 +382,7 @@ function DeviceCard({ labels, language }: { labels: Labels; language: Language }
   const on = state === "on"
 
   return (
-    <section className="rounded-xl border bg-card px-3 py-2.5">
+    <section className="rounded-2xl glass px-3 py-2.5">
       <div className="flex items-center gap-2.5">
         {on ? (
           <BellRingIcon className="size-4 shrink-0 text-primary" />

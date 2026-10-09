@@ -129,7 +129,7 @@ export default async function GuidancePage({
         />
 
         {items.length === 0 ? (
-          <p className="rounded-xl border border-dashed bg-card px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
+          <p className="rounded-2xl border border-dashed border-foreground/15 glass px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
             {emptyMessage(feed, week, category, words)}
           </p>
         ) : (
@@ -178,7 +178,7 @@ function MonthNav({
   const hereAfterBirth = feed.thisStage === "POST_DELIVERY"
 
   return (
-    <nav aria-label={copy.pregnancyMonth} className="space-y-2 rounded-xl border bg-card p-2">
+    <nav aria-label={copy.pregnancyMonth} className="space-y-2 rounded-2xl glass p-2">
       <div className="flex items-center justify-between gap-3">
         <Step
           href={previous === null ? null : hrefFor(previous, undefined, category)}
@@ -464,7 +464,7 @@ function Chip({
         "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         active
           ? cn("border-transparent", activeClass)
-          : "border-border bg-card text-muted-foreground hover:text-foreground"
+          : "border-transparent glass text-muted-foreground hover:text-foreground"
       )}
     >
       {children}

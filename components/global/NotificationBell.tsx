@@ -126,7 +126,7 @@ export function NotificationBell({ labels, language }: { labels: Strings["notifi
           classes so they win over the sheet's own full-height inset. */}
       <SheetContent
         side="right"
-        className="gap-0 bg-background data-[side=right]:w-full data-[side=right]:sm:max-w-md"
+        className="gap-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md"
         style={{ top: HEADER_HEIGHT, bottom: 0, height: "auto" }}
         overlayProps={{ style: { top: HEADER_HEIGHT } }}
       >

@@ -19,9 +19,11 @@ import type { Language } from "@/lib/translation/languages"
  * <p>A top bar rather than the console's sidebar: the portal is used on a
  * phone first, and has a handful of destinations rather than a menu tree.
  *
- * <p>The `after` rule lays the console header's teal-to-blush hairline over
- * the bottom border, the one place the brand appears on every screen without
- * taking up any room.
+ * <p>Frosted glass laid over the top of the scrolling page rather than a solid
+ * bar above it, so the page shows through, blurred, as it passes underneath.
+ * The `after` rule lays the console header's teal-to-blush hairline along its
+ * bottom edge, the one place the brand appears on every screen without taking
+ * up any room.
  */
 export function AppHeader({
   patient,
@@ -44,7 +46,7 @@ export function AppHeader({
   notificationLabels: Strings["notifications"]
 }) {
   return (
-    <header className="relative flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-primary/50 after:via-blush/30 after:to-transparent sm:px-6">
+    <header className="glass-strong absolute inset-x-0 top-0 z-30 flex h-14 items-center gap-3 px-4 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-gradient-to-r after:from-primary/50 after:via-blush/30 after:to-transparent sm:px-6">
       <Link
         href={HOME_PATH}
         className="flex min-w-0 items-center gap-2 rounded-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"

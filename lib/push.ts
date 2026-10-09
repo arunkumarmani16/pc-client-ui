@@ -142,8 +142,35 @@ export async function syncPush(language: string): Promise<void> {
   try {
     await subscribe(language)
   } catch (error) {
+    if (isPushServiceUnavailable(error)) {
+      // The browser's condition, not a fault here, and it runs on every
+      // visit: a warning rather than an error, so it does not raise the dev
+      // overlay (or an error report) on each page she opens.
+      console.warn(
+        "Push notifications are unavailable in this browser: it could not reach its push service.",
+        error
+      )
+      return
+    }
     console.error("Could not sync push subscription", error)
   }
+}
+
+/**
+ * The browser could not reach its own push service, so it cannot subscribe
+ * anyone, whatever this app does.
+ *
+ * <p>Chrome, Edge and Brave all reject `subscribe()` this way, with an
+ * `AbortError` reading "Registration failed - push service error", when the
+ * vendor's push servers are out of reach: Brave with "Use Google services for
+ * push messaging" turned off, which is its default; a Chromium build without
+ * Google's services; or a network, VPN or firewall that blocks them.
+ */
+export function isPushServiceUnavailable(error: unknown): boolean {
+  return (
+    (error instanceof DOMException || error instanceof Error) &&
+    (error.name === "AbortError" || /push service/i.test(error.message))
+  )
 }
 
 /** Subscribes with the server's current key and saves it. False when the server has none. */
@@ -208,7 +235,7 @@ export function pushErrorMessage(error: unknown): string {
     if (error.name === "NotAllowedError") {
       return "Notifications are blocked for this site. Allow them in the browser's site settings."
     }
-    if (error.name === "AbortError" || /push service/i.test(error.message)) {
+    if (isPushServiceUnavailable(error)) {
       return "This browser could not reach its push service. Check your connection, or try Chrome or Edge with its Google/Microsoft services allowed."
     }
     return error.message || "Please try again."

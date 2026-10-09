@@ -2,6 +2,7 @@ import Link from "next/link"
 import { LayersIcon, PlayIcon } from "lucide-react"
 
 import { CategoryArt } from "@/components/content/CategoryArt"
+import { LinkPending } from "@/components/global/LinkPending"
 import type { Content } from "@/interface"
 import { GUIDANCE_PATH } from "@/lib/auth/cookies"
 import { categoryStyle, pageCountOf, previewOf, typeStyle } from "@/lib/content"
@@ -50,15 +51,21 @@ export function ContentCard({
   return (
     <Link
       href={`${GUIDANCE_PATH}/${encodeURIComponent(content.contentId)}`}
-      className="lift group flex flex-col overflow-hidden rounded-xl border bg-card outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="lift group relative flex flex-col overflow-hidden rounded-2xl glass outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
+      {/* A teal glow around the tapped card while the piece is on its way,
+          for when the article's loader has not been prefetched yet. */}
+      <LinkPending
+        className="inset-0 z-10 rounded-2xl"
+        pendingClassName="animate-pulse bg-primary/5 ring-2 ring-primary/50 ring-inset"
+      />
       <div className={cn("relative flex h-36 items-center justify-center", chip)}>
         <CategoryArt
           category={content.category}
           className="h-32 w-auto transition-transform duration-300 group-hover:scale-105"
         />
 
-        <span className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+        <span className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-full glass-strong px-2.5 py-1 text-xs font-medium text-foreground">
           <CategoryIcon className={cn("size-4", tint)} aria-hidden />
           {content.categoryLabel}
         </span>
@@ -71,7 +78,7 @@ export function ContentCard({
           still reads at a glance.
         */}
         {pages > 0 && (
-          <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full bg-card/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+          <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5 rounded-full glass-strong px-2.5 py-1 text-xs font-medium text-foreground">
             <LayersIcon className="size-4 text-muted-foreground" aria-hidden />
             {pageCountOf(deckCopy, pages)}
           </span>

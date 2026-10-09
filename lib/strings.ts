@@ -57,6 +57,8 @@ const en = {
     language: "Language",
     /** The figure in the header, which is the one thing there that is not a place. */
     weekBadge: (week: number) => `Week ${week}`,
+    /** Read out while a page is on its way; the skeleton says it to sighted readers. */
+    loading: "Loading…",
   },
 
   guidance: {
@@ -328,6 +330,7 @@ const ta: Strings = {
     profile: "என் விவரங்கள்",
     language: "மொழி",
     weekBadge: (week) => `வாரம் ${week}`,
+    loading: "ஏற்றப்படுகிறது…",
   },
 
   guidance: {

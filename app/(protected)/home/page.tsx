@@ -151,7 +151,7 @@ function ProgressCard({
   progressPercent: number
 }) {
   return (
-    <section className="animate-rise overflow-hidden rounded-xl border bg-card">
+    <section className="animate-rise overflow-hidden rounded-2xl glass">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 p-4 sm:p-5">
         <div>
           <h2 className="text-sm text-muted-foreground">{heading}</h2>
@@ -199,7 +199,7 @@ function SummaryCard({
   hint: string
 }) {
   return (
-    <section className="rounded-xl border bg-card p-4 sm:p-5">
+    <section className="rounded-2xl glass p-4 sm:p-5">
       <h2 className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <span className="text-primary">{icon}</span>
         {label}
@@ -214,7 +214,7 @@ function SummaryCard({
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed bg-card px-4 py-6 text-center text-sm leading-relaxed text-muted-foreground">
+    <p className="rounded-2xl border border-dashed border-foreground/15 glass px-4 py-6 text-center text-sm leading-relaxed text-muted-foreground">
       {children}
     </p>
   )

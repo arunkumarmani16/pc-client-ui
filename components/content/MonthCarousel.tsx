@@ -243,7 +243,7 @@ function WeekRail({ weeks }: { weeks: CarouselWeek[] }) {
             "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
             entry.active
               ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-card text-muted-foreground hover:text-foreground",
+              : "border-transparent glass text-muted-foreground hover:text-foreground",
             entry.current && !entry.active && "border-primary/40",
             // Nothing filed under it: still reachable, but not dressed up as
             // somewhere worth going.
