@@ -29,7 +29,9 @@ export const metadata: Metadata = {
     title: "Pregnancy Care",
     statusBarStyle: "default",
   },
-  // Only the Home Screen icon: app/favicon.ico still serves the tab.
+  // Only the Home Screen icon: app/favicon.ico serves the tab. It is a teal
+  // circle rather than pc-ui's gradient square, so a clinician with both
+  // apps open can tell the tabs apart.
   icons: {
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },

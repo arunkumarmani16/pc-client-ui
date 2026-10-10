@@ -18,7 +18,7 @@ import {
   NOTIFICATIONS_CHANGED_EVENT,
   registerServiceWorker,
   setAppBadge,
-  syncPush,
+  keepPushOn,
 } from "@/lib/push"
 import type { Strings } from "@/lib/strings"
 import type { Language } from "@/lib/translation/languages"
@@ -37,9 +37,10 @@ const HEADER_HEIGHT = "3.5rem"
  * on, so reading a message does not lose her place.
  *
  * <p>Also where this device's push subscription is kept current, since it is
- * mounted on every signed-in page: the service worker is registered, and if
- * she has allowed notifications the subscription is re-sent with her language
- * and her id (see `syncPush`).
+ * mounted on every signed-in page: the service worker is registered and push
+ * is kept on. If she has allowed notifications the subscription is re-sent
+ * with her language and her id; if she has not been asked yet, she is asked
+ * on her first tap (see `keepPushOn`).
  *
  * <p>The figure is re-read on a slow poll, when the portal comes back to the
  * foreground, and at once when the service worker says a push arrived.
@@ -61,8 +62,18 @@ export function NotificationBell({ labels, language }: { labels: Strings["notifi
     )
   }, [])
 
+  // Registers the worker, then keeps push on: subscribed silently if it is
+  // already allowed, otherwise asked for on the first tap (see `keepPushOn`).
   React.useEffect(() => {
-    void registerServiceWorker().then(() => syncPush(language))
+    let stop = () => {}
+    let unmounted = false
+    void registerServiceWorker().then(() => {
+      if (!unmounted) stop = keepPushOn(language)
+    })
+    return () => {
+      unmounted = true
+      stop()
+    }
   }, [language])
 
   // A push tapped with the app closed opens /notifications, which sends her

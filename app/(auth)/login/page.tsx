@@ -1,6 +1,5 @@
-import { HeartPulse, KeyRoundIcon } from "lucide-react"
+import { BabyIcon, KeyRoundIcon } from "lucide-react"
 
-import { EcgLine } from "@/components/global/EcgLine"
 import { safeRedirectPath } from "@/lib/auth/cookies"
 import { LoginForm } from "./login-form"
 
@@ -9,14 +8,19 @@ export const metadata = {
   description: "Sign in to follow your pregnancy week by week.",
 }
 
+/** Nine moons, one per month, each a little fuller than the last. */
+const MONTHS = [0.375, 0.45, 0.525, 0.6, 0.675, 0.75, 0.825, 0.9, 1]
+
 /**
- * One centred card on a tinted ground, the same door the staff console has,
- * so a patient shown the console at the clinic recognises this as the same
- * service.
+ * One centred card on a soft, warm ground.
  *
- * <p>Colour, texture and motion carry the brand: a ground printed with ECG
- * paper, two soft lights breathing behind the card, and the mark beating at
- * the top of it.
+ * <p>Deliberately not the staff console's door. That one is clinical on
+ * purpose: ECG paper, a monitor strip, a beating mark, square controls. A
+ * patient is not at work and is not reading a monitor, so this one trades
+ * the trace for growth: a blush-led ground, a nesting mark that breathes
+ * rather than beats, nine months filling out under the title, and rounded,
+ * pill-shaped controls. Someone who uses both should never wonder which one
+ * they are on.
  */
 export default async function LoginPage({
   searchParams,
@@ -27,18 +31,22 @@ export default async function LoginPage({
   const { next } = await searchParams
 
   return (
-    <div className="ecg-paper relative h-full overflow-y-auto bg-background">
+    <div className="glass-ambient relative h-full overflow-y-auto">
       {/*
-        Decoration only, and marked as such. `fixed` with `overflow-hidden`
-        keeps the two lights from widening the page on a phone, and keeps them
-        still if the card is tall enough to scroll.
+        Decoration only. Blush leads here, where the console leads with teal,
+        and the lights sit high and wide rather than in opposite corners.
+        `fixed` with `overflow-hidden` keeps them from widening the page on a
+        phone, and keeps them still if the card scrolls.
       */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="animate-breathe absolute -top-32 -left-24 size-[26rem] rounded-full bg-primary blur-3xl sm:size-[34rem]" />
-        {/* Offset so the two lights are never at full strength together. */}
+        <div className="animate-breathe absolute -top-40 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-blush blur-3xl sm:size-[40rem]" />
         <div
-          className="animate-breathe absolute -right-28 -bottom-36 size-[24rem] rounded-full bg-blush blur-3xl sm:size-[32rem]"
-          style={{ animationDelay: "-4.5s" }}
+          className="animate-breathe absolute -bottom-40 -left-32 size-[22rem] rounded-full bg-caution blur-3xl sm:size-[28rem]"
+          style={{ animationDelay: "-3s" }}
+        />
+        <div
+          className="animate-breathe absolute -right-32 bottom-10 size-[20rem] rounded-full bg-primary blur-3xl sm:size-[26rem]"
+          style={{ animationDelay: "-6s" }}
         />
       </div>
 
@@ -50,26 +58,40 @@ export default async function LoginPage({
       */}
       <div className="relative flex min-h-full flex-col px-4 py-8 sm:px-6 sm:py-12">
         <div className="animate-rise m-auto w-full max-w-sm">
-          <div className="overflow-hidden rounded-3xl glass-strong">
-            {/* Unhurried: nothing is loading, so a busy rate would be a lie. */}
-            <EcgLine duration={3.4} className="h-12 w-full text-primary/70" />
-
-            <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-              <div className="flex flex-col items-center text-center">
-                {/* Pulled up over the trace so the mark interrupts the line. */}
-                <span className="-mt-9 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blush text-primary-foreground shadow-lg ring-4 ring-card">
-                  <HeartPulse className="size-6 animate-heartbeat" />
+          <div className="glass-strong rounded-[2rem] px-6 pt-8 pb-6 sm:px-8 sm:pb-8">
+            <div className="flex flex-col items-center text-center">
+              {/*
+                Rings nested around the mark, the way the console's mark sits
+                on a trace: same family, different metaphor.
+              */}
+              <span aria-hidden className="relative flex size-20 items-center justify-center">
+                <span className="animate-breathe absolute inset-0 rounded-full bg-blush" />
+                <span className="absolute inset-2 rounded-full bg-blush-soft ring-1 ring-blush/20" />
+                <span className="relative flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-blush to-caution text-white shadow-lg shadow-blush/30">
+                  <BabyIcon className="size-6" />
                 </span>
-                <h1 className="mt-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                  Pregnancy Care
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Sign in to follow your pregnancy week by week
-                </p>
-              </div>
+              </span>
 
-              <LoginForm redirectTo={safeRedirectPath(next) ?? undefined} />
+              <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                Welcome back
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sign in to follow your pregnancy week by week
+              </p>
+
+              {/* Nine months, rising into place one after another. */}
+              <div aria-hidden className="stagger mt-5 flex items-end gap-1.5">
+                {MONTHS.map((scale, index) => (
+                  <span
+                    key={index}
+                    className="block rounded-full bg-gradient-to-t from-blush to-blush/40"
+                    style={{ width: `${scale * 0.875}rem`, height: `${scale * 0.875}rem` }}
+                  />
+                ))}
+              </div>
             </div>
+
+            <LoginForm redirectTo={safeRedirectPath(next) ?? undefined} />
           </div>
 
           {/*
@@ -78,7 +100,7 @@ export default async function LoginPage({
             before it is asked.
           */}
           <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-            <KeyRoundIcon className="size-3.5 shrink-0 text-primary" />
+            <KeyRoundIcon className="size-3.5 shrink-0 text-blush" />
             Your clinic gave you these details when you registered.
           </p>
         </div>

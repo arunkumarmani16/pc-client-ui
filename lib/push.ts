@@ -98,6 +98,7 @@ export async function getPushState(): Promise<PushState> {
  */
 export async function enablePush(language: string): Promise<PushState> {
   if (!hasPushApis()) return isIos() && !isInstalled() ? "needs-install" : "unsupported"
+  setTurnedOffHere(false)
 
   const permission = await Notification.requestPermission()
   if (permission === "denied") return "denied"
@@ -106,8 +107,17 @@ export async function enablePush(language: string): Promise<PushState> {
   return (await subscribe(language)) ? "on" : "unavailable"
 }
 
-/** Stops this device ringing, on the API and in the browser. */
+/**
+ * Stops this device ringing, on the API and in the browser, and remembers
+ * that it was turned off by hand so {@link keepPushOn} leaves it off.
+ */
 export async function disablePush(): Promise<void> {
+  setTurnedOffHere(true)
+  await unsubscribeHere()
+}
+
+/** Drops this device's subscription, on the API and in the browser. */
+async function unsubscribeHere(): Promise<void> {
   const subscription = await currentSubscription()
   if (!subscription) return
   await removePushSubscription(subscription.endpoint).catch(() => {})
@@ -121,38 +131,87 @@ export async function disablePush(): Promise<void> {
  */
 export async function detachPush(): Promise<void> {
   try {
-    if (hasPushApis()) await disablePush()
+    if (hasPushApis()) await unsubscribeHere()
   } catch (error) {
     console.error("Could not detach push on sign out", error)
   }
 }
 
 /**
- * Brings this device's subscription up to date with whoever is signed in, on
- * every visit, without asking anything.
+ * Keeps push on for whoever is signed in, from the moment the site opens.
+ * Call once when the signed-in shell mounts; returns a cleanup for unmount.
  *
- * <p>Re-sent each time because three things drift: the language she reads in,
- * the owner (someone else may have signed in on this phone since), and the
- * subscription itself, which a browser renews when it likes. If she allowed
- * notifications once and the subscription has since lapsed, a new one is
- * made quietly: the permission she gave still stands.
+ * - Already allowed: the subscription is brought up to date silently.
+ * - Not asked yet: the permission prompt comes up on the first tap or key
+ *   press anywhere on the site. Not on load: Safari and Firefox ignore a
+ *   prompt that no gesture asked for, and Chrome hides one behind a quiet
+ *   icon, so asking on load would fail on half the devices it ran on.
+ * - Blocked, or turned off on this device from the settings panel: left
+ *   alone. Only the browser's settings can undo a block, and turning it off
+ *   by hand is a choice the next visit should respect.
+ * - The server has no push keys: nothing to ask for, so nothing is asked.
+ */
+export function keepPushOn(language: string): () => void {
+  if (!hasPushApis() || turnedOffHere() || Notification.permission === "denied") {
+    return () => {}
+  }
+  if (Notification.permission === "granted") {
+    void syncPush(language)
+    return () => {}
+  }
+
+  const gestures = ["click", "keydown"] as const
+  let stopped = false
+  const stop = () => {
+    stopped = true
+    gestures.forEach((type) => window.removeEventListener(type, ask, true))
+  }
+  // Runs inside the gesture's own handler, and `enablePush` calls
+  // `requestPermission` before it awaits anything, so the browser still
+  // counts the prompt as asked for by the tap.
+  function ask() {
+    stop()
+    enablePush(language).catch((error) => reportPushError("Could not turn on notifications", error))
+  }
+
+  getPushSettings().then(
+    (settings) => {
+      if (stopped || !settings.enabled || !settings.publicKey) return
+      // Capture, so a handler that stops propagation cannot swallow the tap.
+      gestures.forEach((type) => window.addEventListener(type, ask, true))
+    },
+    () => {}
+  )
+  return stop
+}
+
+/**
+ * Brings this device's subscription up to date with whoever is signed in,
+ * without asking anything. Re-sent on every visit because the owner can change
+ * (someone else may have signed in on this device since), and because the
+ * browser renews the subscription when it likes. If permission was given once
+ * and the subscription has since lapsed, a new one is made quietly.
  */
 export async function syncPush(language: string): Promise<void> {
   if (!hasPushApis() || Notification.permission !== "granted") return
   try {
     await subscribe(language)
   } catch (error) {
-    if (isPushServiceUnavailable(error)) {
-      // The browser's condition, not a fault here, and it runs on every
-      // visit: a warning rather than an error, so it does not raise the dev
-      // overlay (or an error report) on each page she opens.
-      console.warn(
-        "Push notifications are unavailable in this browser: it could not reach its push service.",
-        error
-      )
-      return
-    }
-    console.error("Could not sync push subscription", error)
+    reportPushError("Could not sync push subscription", error)
+  }
+}
+
+/**
+ * Logs a push failure. An unreachable push service is the browser's condition,
+ * not a fault here, and it recurs on every visit, so it is a warning rather
+ * than an error: it does not raise the dev overlay or an error report on each
+ * page opened.
+ */
+export function reportPushError(context: string, error: unknown): void {
+  if (isPushServiceUnavailable(error)) {
+    console.warn("Push notifications are unavailable in this browser: it could not reach its push service.", error)
+  } else {
+    console.error(context, error)
   }
 }
 
@@ -171,6 +230,33 @@ export function isPushServiceUnavailable(error: unknown): boolean {
     (error instanceof DOMException || error instanceof Error) &&
     (error.name === "AbortError" || /push service/i.test(error.message))
   )
+}
+
+/**
+ * Set when push is turned off by hand from the settings panel, so
+ * {@link keepPushOn} does not switch it straight back on next visit. Per
+ * device, like the subscription it stands for. Storage can be unavailable
+ * (private windows, blocked site data); push then simply counts as not turned
+ * off.
+ */
+const TURNED_OFF_KEY = "push:turned-off"
+
+function turnedOffHere(): boolean {
+  try {
+    return window.localStorage.getItem(TURNED_OFF_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+function setTurnedOffHere(off: boolean): void {
+  try {
+    if (off) window.localStorage.setItem(TURNED_OFF_KEY, "1")
+    else window.localStorage.removeItem(TURNED_OFF_KEY)
+  } catch {
+    // Without storage the choice lasts until the next visit, which is the
+    // most a browser that will not store anything can give.
+  }
 }
 
 /** Subscribes with the server's current key and saves it. False when the server has none. */
