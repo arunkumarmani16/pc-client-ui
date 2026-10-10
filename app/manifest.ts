@@ -7,8 +7,7 @@ import type { MetadataRoute } from "next"
  * site opened from the Home Screen).
  *
  * <p>Starts on Home, which sends a signed-out mother to the sign-in page the
- * usual way. The colours are the light theme's background and the brand teal
- * the icons are drawn in.
+ * usual way. The colours are the light theme's background and the brand teal.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
