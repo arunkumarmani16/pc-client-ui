@@ -28,3 +28,12 @@ export async function login(
   )
   return data
 }
+
+/**
+ * Puts the sign-out on the console's access trail. The API is stateless, so
+ * this ends nothing by itself; it needs the token, so it has to be called
+ * before the cookie is dropped.
+ */
+export async function logout(config?: AxiosRequestConfig): Promise<void> {
+  await httpClient.post<void>(`${RESOURCE}/logout`, undefined, config)
+}

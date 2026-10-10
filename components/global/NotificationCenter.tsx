@@ -22,9 +22,9 @@ import {
   disablePush,
   enablePush,
   getPushState,
-  isPushServiceUnavailable,
   NOTIFICATIONS_CHANGED_EVENT,
   pushErrorMessage,
+  reportPushError,
   type PushState,
 } from "@/lib/push"
 import type { Strings } from "@/lib/strings"
@@ -337,10 +337,7 @@ function DeviceCard({ labels, language }: { labels: Labels; language: Language }
     try {
       setState(await enablePush(language))
     } catch (error) {
-      // The toast already says what to do about an unreachable push service;
-      // only anything else is a fault worth an error in the console.
-      if (isPushServiceUnavailable(error)) console.warn("Push service unreachable", error)
-      else console.error("Could not turn on notifications", error)
+      reportPushError("Could not turn on notifications", error)
       toast.add({ type: "error", title: labels.failed, description: pushErrorMessage(error) })
     } finally {
       setBusy(false)

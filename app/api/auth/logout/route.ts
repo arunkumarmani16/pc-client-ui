@@ -1,17 +1,35 @@
-import { NextResponse } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
+import { forwardedClientHeaders } from "@/lib/api/forwarded"
 import {
   ACCESS_TOKEN_COOKIE,
   LOGIN_PATH,
   REDIRECT_PARAM,
   safeRedirectPath,
 } from "@/lib/auth/cookies"
+import { logout } from "@/service"
 
 /**
  * Signs the patient out. The API is stateless, so there is nothing to revoke:
  * dropping the cookie is the whole of it, and the token expires on its own.
+ *
+ * <p>First, while the token still works, the API is told, so the sign-out
+ * shows on the console's Patient Login History. Best-effort: a mother asking
+ * to sign out is signed out whether or not that call lands.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value
+
+  if (token) {
+    try {
+      await logout({
+        headers: { ...forwardedClientHeaders(request), Authorization: `Bearer ${token}` },
+      })
+    } catch (error) {
+      console.error("Could not record sign out", error)
+    }
+  }
+
   const response = NextResponse.json({ ok: true })
   response.cookies.delete(ACCESS_TOKEN_COOKIE)
   return response

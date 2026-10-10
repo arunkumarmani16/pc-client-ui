@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import type { Session } from "@/interface"
+import { forwardedClientHeaders } from "@/lib/api/forwarded"
 import { accessTokenCookie } from "@/lib/auth/cookies"
 import { ApiError, login } from "@/service"
 
@@ -30,10 +31,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { token, expiresAt, patient } = await login({
-      username: username.trim(),
-      password,
-    })
+    const { token, expiresAt, patient } = await login(
+      { username: username.trim(), password },
+      { headers: forwardedClientHeaders(request) }
+    )
 
     const session: Session = { patient }
     const response = NextResponse.json(session)

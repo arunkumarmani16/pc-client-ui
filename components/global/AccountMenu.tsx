@@ -69,8 +69,9 @@ export function AccountMenu({ patient, labels }: { patient: Patient; labels: Acc
       // next must not be woken by her notifications.
       await detachPush()
 
-      // Drops the httpOnly cookie. The API is stateless, so there is nothing
-      // else to revoke; the token simply stops being sent.
+      // Records the sign-out with the API, then drops the httpOnly cookie.
+      // The API is stateless, so there is nothing else to revoke; the token
+      // simply stops being sent.
       const response = await fetch(SIGN_OUT_PATH, { method: "POST" })
       if (!response.ok) throw new Error(`Sign out failed with ${response.status}`)
 

@@ -89,6 +89,12 @@
   /* A track filling to its value. Scales rather than animating `width` so it
      runs on the compositor; the element must carry `origin-left`. */
   --animate-fill: hc-fill 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* The circle loader: the ring turns at a steady rate while its arc grows
+     and shrinks on a slower, eased cycle, so the two never line up into a
+     plain rotating segment. */
+  --animate-orbit: hc-orbit 1.4s linear infinite;
+  --animate-orbit-reverse: hc-orbit 2.8s linear infinite reverse;
+  --animate-arc: hc-arc 1.6s ease-in-out infinite;
   /* A segment crossing a track with no known end: the page loader's bar.
      Eased in and out so it gathers and releases speed rather than sliding at
      a constant rate, which reads as stuck. */
@@ -304,6 +310,33 @@
   50% {
     opacity: 0.32;
     transform: scale(1.08);
+  }
+}
+
+@keyframes hc-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * The loader's arc, on a circle carrying `pathLength="100"`: it starts as a
+ * dot, stretches to most of a turn, then its tail chases its head round.
+ * Under reduced motion the animation is cut to its last frame, which is a
+ * still, mostly drawn ring rather than an empty one.
+ */
+@keyframes hc-arc {
+  0% {
+    stroke-dasharray: 1 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 70 200;
+    stroke-dashoffset: -15;
+  }
+  100% {
+    stroke-dasharray: 70 200;
+    stroke-dashoffset: -99;
   }
 }
 
