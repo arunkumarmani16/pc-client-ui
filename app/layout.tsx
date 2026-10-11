@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     title: "Pregnancy Care",
     statusBarStyle: "default",
   },
-  // Only the Home Screen icon: app/favicon.ico serves the tab. It is a teal
-  // circle rather than pc-ui's gradient square, so a clinician with both
-  // apps open can tell the tabs apart.
+  // Only the Home Screen icon: app/favicon.ico serves the tab. It is the
+  // mother held in cupped hands, where pc-ui's carries a gear, so a
+  // clinician with both apps open can tell the tabs apart.
   icons: {
     apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
@@ -51,8 +51,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7fafb" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1e26" },
+    { media: "(prefers-color-scheme: light)", color: "#fffcf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#16131b" },
   ],
 }
 

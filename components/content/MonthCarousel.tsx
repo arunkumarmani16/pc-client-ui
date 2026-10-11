@@ -57,7 +57,7 @@ export interface CarouselWeek {
 }
 
 /**
- * A colour per open month: pink for the month she has finished, teal for the
+ * A colour per open month: rose for the month she has finished, plum for the
  * one she is in, blue for the one ahead. Picked from tokens that already carry
  * a dark-mode variant, and kept clear of `caution`, which the app reserves for
  * warnings.

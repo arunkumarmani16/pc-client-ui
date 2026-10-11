@@ -13,7 +13,7 @@ const SIZES = {
  *
  * <p>Plain, it draws in `currentColor`, so it takes the colour of the text
  * around it (a button's label, a toast's icon slot). `brand` is for the big
- * waits: a teal arc with a slower blush ring turning the other way inside it,
+ * waits: a plum arc with a slower rose ring turning the other way inside it,
  * around the beating heart from the login card.
  *
  * <p>Drawn rather than taken from the icon set so the arc can animate its

@@ -7,7 +7,8 @@ import type { MetadataRoute } from "next"
  * site opened from the Home Screen).
  *
  * <p>Starts on Home, which sends a signed-out mother to the sign-in page the
- * usual way. The colours are the light theme's background and the brand teal.
+ * usual way. The colours are the light theme's ivory background and the
+ * brand plum.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -19,8 +20,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f7fafb",
-    theme_color: "#006a6c",
+    background_color: "#fffcf9",
+    theme_color: "#844d84",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

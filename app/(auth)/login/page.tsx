@@ -41,7 +41,7 @@ export default async function LoginPage({
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="animate-breathe absolute -top-40 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-blush blur-3xl sm:size-[40rem]" />
         <div
-          className="animate-breathe absolute -bottom-40 -left-32 size-[22rem] rounded-full bg-caution blur-3xl sm:size-[28rem]"
+          className="animate-breathe absolute -bottom-40 -left-32 size-[22rem] rounded-full bg-primary blur-3xl sm:size-[28rem]"
           style={{ animationDelay: "-3s" }}
         />
         <div
@@ -67,7 +67,7 @@ export default async function LoginPage({
               <span aria-hidden className="relative flex size-20 items-center justify-center">
                 <span className="animate-breathe absolute inset-0 rounded-full bg-blush" />
                 <span className="absolute inset-2 rounded-full bg-blush-soft ring-1 ring-blush/20" />
-                <span className="relative flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-blush to-caution text-white shadow-lg shadow-blush/30">
+                <span className="relative flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-blush to-primary text-white shadow-lg shadow-blush/30">
                   <BabyIcon className="size-6" />
                 </span>
               </span>

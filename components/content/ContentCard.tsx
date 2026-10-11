@@ -53,7 +53,7 @@ export function ContentCard({
       href={`${GUIDANCE_PATH}/${encodeURIComponent(content.contentId)}`}
       className="lift group relative flex flex-col overflow-hidden rounded-2xl glass outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      {/* A teal glow around the tapped card while the piece is on its way,
+      {/* A plum glow around the tapped card while the piece is on its way,
           for when the article's loader has not been prefetched yet. */}
       <LinkPending
         className="inset-0 z-10 rounded-2xl"

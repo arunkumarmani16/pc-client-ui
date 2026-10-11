@@ -21,9 +21,9 @@ import type { Language } from "@/lib/translation/languages"
  *
  * <p>Frosted glass laid over the top of the scrolling page rather than a solid
  * bar above it, so the page shows through, blurred, as it passes underneath.
- * The `after` rule lays the console header's teal-to-blush hairline along its
- * bottom edge, the one place the brand appears on every screen without taking
- * up any room.
+ * The `after` rule lays the console header's primary-to-blush hairline (here
+ * plum to rose) along its bottom edge, the one place the brand appears on
+ * every screen without taking up any room.
  */
 export function AppHeader({
   patient,

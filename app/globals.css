@@ -3,10 +3,11 @@
 @import "shadcn/tailwind.css";
 
 /*
- * The tokens, motion and utilities below are shared with the staff console
- * (pc-ui/app/globals.css). The portal and the console are one product, so a
- * token changed there should change here too. Only the console's sidebar
- * tokens are left out, because the portal has no sidebar.
+ * The motion and utilities below are shared with the staff console
+ * (pc-ui/app/globals.css), so a change to them there should change here too.
+ * The colours are not: the portal has its own softer plum, rose, lavender
+ * and ivory palette, while the console keeps its clinical teal. The
+ * console's sidebar tokens are left out, because the portal has no sidebar.
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -56,8 +57,8 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
 
-  /* The maternity half of the identity: the teal is the clinic, the blush
-     is who the clinic is for. Accent and decoration only. */
+  /* Rose, the warm half of the identity beside the plum. Accent and
+     decoration only. */
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
 
@@ -102,38 +103,40 @@
 }
 
 :root {
-  /* Grounds: a clinical off-white with the coolness left in rather than
-     neutralised out, and pure white for the cards on top of it, so the
-     layering reads without a border having to do all the work. */
-  --background: oklch(0.985 0.006 210);
-  --foreground: oklch(0.215 0.028 240);
+  /* Premium maternal wellness: plum, rose, lavender and ivory on charcoal
+     text. Grounds are an ivory with the warmth left in, and pure white for
+     the cards on top of it, so the layering reads without a border having
+     to do all the work. */
+  --background: oklch(0.993 0.005 68);
+  --foreground: oklch(0.32 0.02 294);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.215 0.028 240);
+  --card-foreground: oklch(0.32 0.02 294);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.215 0.028 240);
+  --popover-foreground: oklch(0.32 0.02 294);
 
-  /* Medical teal. Lightness sits at 0.47 rather than the mid-50s a teal
-     naturally wants, because white label text has to clear 4.5:1 against
-     it; at 0.52 it lands nearer 4.1 and every filled button fails contrast. */
-  --primary: oklch(0.47 0.093 196);
-  --primary-foreground: oklch(0.99 0.004 196);
+  /* Plum, #844d84. Ivory label text on it clears 6:1, so a filled button
+     passes AA with room to spare. */
+  --primary: oklch(0.505 0.106 327);
+  --primary-foreground: oklch(0.993 0.005 68);
 
-  --secondary: oklch(0.958 0.014 205);
-  --secondary-foreground: oklch(0.3 0.04 215);
-  --muted: oklch(0.965 0.011 208);
-  /* 4.6:1 on white. It carries every hint, timestamp and caption, so it has
-     to clear AA on its own. */
-  --muted-foreground: oklch(0.49 0.021 228);
-  /* Hover and selected grounds. Tinted toward the teal so a hovered row
+  /* Rose, #e1b9d1, for secondary buttons and badges. */
+  --secondary: oklch(0.828 0.056 342);
+  --secondary-foreground: oklch(0.3 0.06 327);
+  /* Lavender, #f4ecf7: the soft ground placeholders and chips sit on. */
+  --muted: oklch(0.952 0.017 317);
+  /* 6.3:1 on white and 5.5:1 on lavender. It carries every hint, timestamp
+     and caption, so it has to clear AA on its own. */
+  --muted-foreground: oklch(0.49 0.035 312);
+  /* Hover and selected grounds. Tinted toward the plum so a hovered row
      reads as part of the system rather than as a grey smudge. */
-  --accent: oklch(0.955 0.022 196);
-  --accent-foreground: oklch(0.3 0.05 205);
+  --accent: oklch(0.94 0.025 322);
+  --accent-foreground: oklch(0.32 0.06 327);
 
   --destructive: oklch(0.495 0.196 27);
 
-  --border: oklch(0.918 0.012 215);
-  --input: oklch(0.918 0.012 215);
-  --ring: oklch(0.6 0.095 196);
+  --border: oklch(0.905 0.018 315);
+  --input: oklch(0.905 0.018 315);
+  --ring: oklch(0.6 0.1 327);
 
   --stable: oklch(0.475 0.108 162);
   --stable-soft: oklch(0.955 0.032 162);
@@ -144,15 +147,17 @@
   --info: oklch(0.49 0.135 248);
   --info-soft: oklch(0.955 0.028 248);
 
-  --blush: oklch(0.5 0.157 355);
-  --blush-soft: oklch(0.955 0.03 355);
+  /* A deeper rose than the swatch, because it is also used as text on its
+     own soft ground (5:1 there). */
+  --blush: oklch(0.52 0.13 352);
+  --blush-soft: oklch(0.95 0.025 348);
 
-  /* Teal through to blush, so five series still read as this product
-     rather than as whatever palette the chart library shipped with. */
-  --chart-1: oklch(0.55 0.1 196);
-  --chart-2: oklch(0.6 0.12 172);
-  --chart-3: oklch(0.55 0.13 248);
-  --chart-4: oklch(0.62 0.14 350);
+  /* Plum through rose, so five series still read as this product rather
+     than as whatever palette the chart library shipped with. */
+  --chart-1: oklch(0.505 0.106 327);
+  --chart-2: oklch(0.66 0.11 350);
+  --chart-3: oklch(0.58 0.1 295);
+  --chart-4: oklch(0.75 0.07 342);
   --chart-5: oklch(0.68 0.13 75);
 
   --radius: 0.625rem;
@@ -163,40 +168,40 @@
      it, and together they are what make a pane read as glass rather than as
      a translucent rectangle. */
   --glass-tint: oklch(1 0 0 / 58%);
-  --glass-tint-strong: oklch(0.995 0.003 210 / 72%);
+  --glass-tint-strong: oklch(0.995 0.004 330 / 72%);
   --glass-sheen: oklch(1 0 0 / 55%);
   --glass-edge: oklch(1 0 0 / 85%);
   --glass-edge-low: oklch(1 0 0 / 30%);
-  --glass-outline: oklch(0.45 0.03 220 / 11%);
-  --glass-shadow: 0 1px 2px oklch(0.3 0.04 230 / 5%),
-    0 10px 32px -14px oklch(0.4 0.07 205 / 28%);
+  --glass-outline: oklch(0.45 0.03 320 / 11%);
+  --glass-shadow: 0 1px 2px oklch(0.3 0.04 320 / 5%),
+    0 10px 32px -14px oklch(0.4 0.07 327 / 28%);
 }
 
 .dark {
-  /* Deep blue-slate rather than black, with every accent lifted in
+  /* Deep charcoal-plum rather than black, with every accent lifted in
      lightness to survive on it. */
-  --background: oklch(0.185 0.022 240);
-  --foreground: oklch(0.955 0.008 210);
-  --card: oklch(0.235 0.024 238);
-  --card-foreground: oklch(0.955 0.008 210);
-  --popover: oklch(0.235 0.024 238);
-  --popover-foreground: oklch(0.955 0.008 210);
+  --background: oklch(0.195 0.016 300);
+  --foreground: oklch(0.96 0.008 320);
+  --card: oklch(0.245 0.02 305);
+  --card-foreground: oklch(0.96 0.008 320);
+  --popover: oklch(0.245 0.02 305);
+  --popover-foreground: oklch(0.96 0.008 320);
 
-  --primary: oklch(0.72 0.11 192);
-  --primary-foreground: oklch(0.2 0.035 220);
+  --primary: oklch(0.77 0.09 327);
+  --primary-foreground: oklch(0.21 0.03 320);
 
-  --secondary: oklch(0.295 0.028 235);
-  --secondary-foreground: oklch(0.95 0.01 210);
-  --muted: oklch(0.295 0.028 235);
-  --muted-foreground: oklch(0.735 0.022 215);
-  --accent: oklch(0.33 0.042 210);
-  --accent-foreground: oklch(0.96 0.01 200);
+  --secondary: oklch(0.33 0.045 338);
+  --secondary-foreground: oklch(0.95 0.015 342);
+  --muted: oklch(0.295 0.022 305);
+  --muted-foreground: oklch(0.75 0.022 312);
+  --accent: oklch(0.335 0.04 322);
+  --accent-foreground: oklch(0.965 0.01 322);
 
   --destructive: oklch(0.71 0.17 24);
 
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.66 0.1 196);
+  --ring: oklch(0.68 0.09 327);
 
   --stable: oklch(0.75 0.14 162);
   --stable-soft: oklch(0.75 0.14 162 / 16%);
@@ -207,17 +212,17 @@
   --info: oklch(0.72 0.13 248);
   --info-soft: oklch(0.72 0.13 248 / 16%);
 
-  --blush: oklch(0.74 0.14 352);
-  --blush-soft: oklch(0.74 0.14 352 / 16%);
+  --blush: oklch(0.8 0.085 350);
+  --blush-soft: oklch(0.8 0.085 350 / 16%);
 
-  --chart-1: oklch(0.72 0.11 192);
-  --chart-2: oklch(0.75 0.13 172);
-  --chart-3: oklch(0.7 0.13 248);
-  --chart-4: oklch(0.74 0.14 350);
+  --chart-1: oklch(0.77 0.09 327);
+  --chart-2: oklch(0.76 0.1 350);
+  --chart-3: oklch(0.72 0.09 295);
+  --chart-4: oklch(0.82 0.06 342);
   --chart-5: oklch(0.79 0.13 75);
 
-  --glass-tint: oklch(0.27 0.026 238 / 55%);
-  --glass-tint-strong: oklch(0.235 0.024 238 / 72%);
+  --glass-tint: oklch(0.27 0.022 305 / 55%);
+  --glass-tint-strong: oklch(0.245 0.02 305 / 72%);
   --glass-sheen: oklch(1 0 0 / 9%);
   --glass-edge: oklch(1 0 0 / 20%);
   --glass-edge-low: oklch(1 0 0 / 5%);
@@ -502,8 +507,8 @@
 }
 
 /**
- * The ground the glass sits on: the off-white with a teal light top left,
- * blush to the right and a little blue underneath. Put it on a box that does
+ * The ground the glass sits on: the ivory with a plum light top left,
+ * rose to the right and a little blue underneath. Put it on a box that does
  * not itself scroll (the shell, not `<main>`), so the lights hold still while
  * the page moves through them, which is most of what sells the glass.
  */
